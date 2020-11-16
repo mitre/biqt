@@ -1,3 +1,31 @@
+# Docker (CentOS 7)
+
+## Prerequisites
+
+This guide builds a BIQT Docker image which includes the reference BIQTIris and BIQTFace providers. The BIQT Java
+bindings are unavailable in this image.
+
+Docker 17 or higher is required.
+
+## Building and Installing
+
+From the `docker/` directory in this project's repository, run the following commands from a Windows console or
+Linux terminal:
+
+```bash
+docker build -t biqt-github .
+```
+
+## Running BIQT
+
+Run the `biqt-github` image using `docker`.
+
+```bash
+$ docker run --rm -it biqt-github
+# biqt --version
+BIQT v0.1 
+``` 
+  
 # Linux (CentOS Linux 7.4)
 
 ## Prerequisites

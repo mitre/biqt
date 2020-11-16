@@ -15,11 +15,24 @@ integrate the framework into larger systems.
 
 ![The BIQT Architecture](doc/biqt.png)
 
+### Quick Start
+
+Use the [`mitre/biqt`](https://hub.docker.com/r/mitre/biqt) image hosted on Docker Hub to access a preconfigured CentOS 7 environment with the BIQT
+command-line interface. This image includes the BIQTIris and BIQTFace providers.
+
+The following Linux-based example shows how to start a `mitre/biqt` container capable of accessing and using the 
+biometric images stored in the directory `/path/to/biometric/images` on the host filesystem.
+
+```bash
+user@localhost:~/$ docker run --rm -v /path/to/images:/data -it mitre/biqt
+[root@66d3679381d0 /]# biqt -m iris iris-image-001.png 
+```
+
 ### Installation
 
 The framework targets Windows 10 and CentOS Linux 7.4.
 
-Build and install instructions for CentOS Linux 7.4 and Windows 10 can be found in [INSTALL.md](INSTALL.md).
+Build and install instructions for Docker, CentOS Linux 7.4, and Windows 10 can be found in [INSTALL.md](INSTALL.md).
 
 ### Integrating Providers
 
