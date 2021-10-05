@@ -93,3 +93,4 @@ nmake install
 Reference image quality libraries for face and iris images are available on GitHub.
   * [BIQTFace](https://github.com/mitre/biqt-face)
   * [BIQTIris](https://github.com/mitre/biqt-iris)
+  * [BIQTContactDetector](https://github.com/mitre/biqt-contact-detector)
