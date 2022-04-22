@@ -308,10 +308,10 @@ Provider::EvaluationResult BIQT::runProvider(const ProviderInfo *p,
                                              const std::string &filePath)
 {
     Provider::EvaluationResult result = {0};
+    const char* result_str = NULL;
     try {
-        // const char* cFilePath = filePath.c_str();
-        std::string result_str = p->evaluate(filePath);
-        result = Provider::deserializeResult(result_str.c_str());
+        result_str = p->evaluate(filePath);
+        result = Provider::deserializeResult(result_str);
         result.provider = p->name;
     }
     catch (...) {
@@ -319,6 +319,9 @@ Provider::EvaluationResult BIQT::runProvider(const ProviderInfo *p,
                   << std::endl;
         if (result.errorCode == 0)
             result.errorCode = -1;
+    }
+    if(result_str){
+        delete[] result_str;
     }
 
     if (result.errorCode != 0) {
