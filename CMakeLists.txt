@@ -89,7 +89,7 @@ if(WITH_JAVA)
 	FILE(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/java/src/main/resources/)
 	
 	# Locate the maven executable.
-	find_program(MAVEN NAMES mvn mvnw)
+	find_program(MAVEN NAMES mvn mvnw PATHS ${CMAKE_SOURCE_DIR}/java/)
 	
 	if(NOT MAVEN)
 		message(FATAL_ERROR "Failed to find the Maven executable named mvn or mvnw. Please add it to the PATH or specify its location in CMAKE_PREFIX_PATH.")

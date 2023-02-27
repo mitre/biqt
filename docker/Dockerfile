@@ -23,7 +23,7 @@ RUN mkdir /app && \
     git clone https://github.com/mitre/biqt.git --branch "java-11" && \
     git clone https://github.com/mitre/biqt-iris.git && \
     git clone https://github.com/mitre/biqt-face.git && \
-    git clone https://github.com/mitre/biqt-contact-detector.git && \
+    # git clone https://github.com/mitre/biqt-contact-detector.git && \
     git clone --recurse-submodules https://github.com/biometrics/openbr.git --branch "v1.1.0"
 
 # Perform the build.
@@ -61,26 +61,27 @@ RUN export NUM_CORES=$(cat /proc/cpuinfo | grep -Pc "processor\s*:\s*[0-9]+\s*$"
     make -j${NUM_CORES} && \
     make install
 
-RUN export NUM_CORES=$(cat /proc/cpuinfo | grep -Pc "processor\s*:\s*[0-9]+\s*$") && \
-    source /etc/profile.d/biqt.sh && \
-    ( mkdir /usr/src || true )  && \
-    cd /usr/src && \
-    wget https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz && \
-    tar xzf Python-3.7.9.tgz && \
-    cd Python-3.7.9 && \
-    ./configure --enable-shared --enable-optimizations && \
-    make -j$(nproc) altinstall && \
-    rm -rf /usr/src/Python-3.7.9.tgz /usr/src/Python-3.7.9/
+# Skipping contact detector for now.
+# RUN export NUM_CORES=$(cat /proc/cpuinfo | grep -Pc "processor\s*:\s*[0-9]+\s*$") && \
+#     source /etc/profile.d/biqt.sh && \
+#     ( mkdir /usr/src || true )  && \
+#     cd /usr/src && \
+#     wget https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz && \
+#     tar xzf Python-3.7.9.tgz && \
+#     cd Python-3.7.9 && \
+#     ./configure --enable-shared --enable-optimizations && \
+#     make -j$(nproc) altinstall && \
+#     rm -rf /usr/src/Python-3.7.9.tgz /usr/src/Python-3.7.9/
 
-RUN export NUM_CORES=$(cat /proc/cpuinfo | grep -Pc "processor\s*:\s*[0-9]+\s*$") && \
-    source /etc/profile.d/biqt.sh && \
-    cd /app/biqt-contact-detector && \
-    pip3.7 install -r requirements.txt && \
-    mkdir build && \
-    cd build && \
-    cmake3 -DCMAKE_BUILD_TYPE=Release .. && \
-    make -j${NUM_CORES} && \
-    make install
+# RUN export NUM_CORES=$(cat /proc/cpuinfo | grep -Pc "processor\s*:\s*[0-9]+\s*$") && \
+#     source /etc/profile.d/biqt.sh && \
+#     cd /app/biqt-contact-detector && \
+#     pip3.7 install -r requirements.txt && \
+#     mkdir build && \
+#     cd build && \
+#     cmake3 -DCMAKE_BUILD_TYPE=Release .. && \
+#     make -j${NUM_CORES} && \
+#     make install
 
 # Reduce image size.
 #FROM centos:7 as release
