@@ -355,11 +355,11 @@ int main(int argc, char **argv)
             // Normal behavior, print results
             if (!app.getProviders().empty()) {
                 std::cout << std::endl
-                          << "Provider\tVersion\tModality\tDescription"
+                          << "Provider\t\tVersion\tModality\tDescription"
                           << std::endl;
                 for (const auto &p : app.getProviders()) {
                     if (!optarg || p->modality == optarg) {
-                        std::cout << p->name << "\t" << p->version << "\t"
+                        std::cout << p->name << "\t\t" << p->version << "\t"
                                   << p->modality << "\t" << p->description << "\t"
                                   << std::endl;
                     }
