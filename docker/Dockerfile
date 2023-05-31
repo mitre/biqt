@@ -21,7 +21,7 @@ RUN yum install -y epel-release && \
 RUN mkdir /app && \
     cd /app && \
     git clone https://github.com/mitre/biqt.git && \
-    git clone https://github.com/mitre/biqt-iris.git --branch r0.4 && \
+    git clone https://github.com/mitre/biqt-iris.git --branch v0.4 && \
     git clone https://github.com/mitre/biqt-face.git && \
     git clone --recurse-submodules https://github.com/biometrics/openbr.git --branch v1.1.0
 
