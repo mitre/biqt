@@ -23,7 +23,7 @@ RUN mkdir /app && \
     git clone https://github.com/mitre/biqt.git && \
     git clone https://github.com/mitre/biqt-iris.git --branch v0.4 && \
     git clone https://github.com/mitre/biqt-face.git && \
-    git clone --recurse-submodules https://github.com/biometrics/openbr.git --branch v1.1.0
+    git clone https://github.com/biometrics/openbr.git && cd openbr && git checkout 4cc909a && git submodule init && git submodule update
 
 # Perform the build.
 RUN export NUM_CORES=$(cat /proc/cpuinfo | grep -Pc "processor\s*:\s*[0-9]+\s*$") && \
