@@ -60,7 +60,7 @@ ProviderInfo::ProviderInfo(std::string modulePath, std::string lib)
         this->handle = dlopen(this->soPath.c_str(), RTLD_NOW);
         if (!this->handle) {
             throw std::runtime_error(
-                    "Provider Read error: Unable to load the shared object");
+                    "Provider Read error: Unable to load the shared object: " + std::string(dlerror()));
         }
     }
 

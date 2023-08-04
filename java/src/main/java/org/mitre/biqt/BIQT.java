@@ -16,15 +16,15 @@ import java.io.IOException;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import cz.adamh.utils.NativeUtils;
 
 /**
  * A new instance of BIQT which can be used to run available providers.
  */
 public class BIQT {
-  private static final Logger logger = LogManager.getLogger();
+  private static final Logger logger = LoggerFactory.getLogger(BIQT.class);
   private static final String os = System.getProperty("os.name");
 
   /* Loads the necessary native code libraries from the jar file */
@@ -41,9 +41,9 @@ public class BIQT {
         NativeUtils.loadLibraryFromJar("/libbiqt_java.so");
       }
     } catch (IOException e) {
+      logger.warn("Second chance loading biqt libraries.");
       System.loadLibrary("biqtapi");
-      System.loadLibrary("biqt_java");
-      logger.error(e);
+      System.loadLibrary("biqt_java");      
     }
   }
 
@@ -82,10 +82,9 @@ public class BIQT {
         JSONObject json = (JSONObject)parser.parse(result);
         results.add(json);
       } catch (ParseException e) {
-        logger.error(e);
         logger.error(
-            String.format("BIQT response for file '%s' was malformed: \n%s",
-                          inputFile, result));
+            String.format("BIQT response for file '%s' was malformed: \n%s", inputFile, result),
+            e);
       }
     }
     return results;
@@ -127,8 +126,7 @@ public class BIQT {
         results.add(json);
       } catch (ParseException e) {
         logger.error(
-            String.format("BIQT response for file '%s' was malformed: \n%s",
-                          inputFile, result));
+            String.format("BIQT response for file '%s' was malformed: \n%s", inputFile, result));
       }
     }
     return results;
