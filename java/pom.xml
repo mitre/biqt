@@ -68,13 +68,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-<<<<<<< HEAD
-                    <source>11</source>
-                    <target>11</target>
-=======
                     <source>17</source>
                     <target>17</target>
->>>>>>> dd0e9ce9e2fd29abdcdd92f4d1891bb7729a45e5
                 </configuration>
             </plugin>
             <plugin>
