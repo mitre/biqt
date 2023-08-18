@@ -126,6 +126,8 @@ RUN set -e; \
         make install; \
     else \
         echo "Skipping OpenBR build for BIQT Face. BIQT Face not requested."; \
+	mkdir /opt/openbr || true; \
+ 	echo "WITH_BIQT_FACE was not set to ON so openbr not compiled and installed." > /opt/openbr/README; \
     fi
 
 ARG BIQT_FACE_COMMIT
