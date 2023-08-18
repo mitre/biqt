@@ -43,6 +43,11 @@ if [ "${WITH_BIQT_CONTACT_DETECTOR}" == "ON" ]; then
 	echo "Building with BIQT_CONTACT_DETECTOR ${BIQT_CONTACT_DETECTOR_COMMIT} @ ${BIQT_CONTACT_DETECTOR_COMMIT_RESOLVED}."
 fi
 
+BIQT_TAG="${BIQT_COMMIT}"
+if [ "${BIQT_TAG}" == "master" ]; then
+       BIQT_TAG="latest"
+fi
+
 # Added `--pull` argument to force retrieval of the latest base image.
 DOCKER_BUILDKIT=1 docker build \
 	--pull \
@@ -53,4 +58,5 @@ DOCKER_BUILDKIT=1 docker build \
 	--secret id=SSH_PRIVATE_KEY,src=$HOME/.ssh/id_rsa \
 	--secret id=ALT_OPENSSL_CONF,src=docker/openssl.cnf \
 	--progress=plain \
+ 	--tag ghcr.io/mitre/biqt:${BIQT_TAG} \
 	docker/
