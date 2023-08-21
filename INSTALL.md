@@ -39,7 +39,6 @@ sudo apt update
 sudo apt install -y cmake build-essential libjsoncpp-dev openjdk-17-jdk
 ```
 
-
 ## Building and Installing
 
 The following commands clone the BIQT source code, build the framework,
@@ -65,7 +64,6 @@ to start BIQT!
 $> biqt --version
 BIQT v23.04
 ```
-
 
 ## Building and Installing
 
