@@ -66,7 +66,7 @@ Once implemented, providers can be built and installed into the framework using 
 framework must already be installed and the BIQT_HOME environment variable must be set.
 
 
-**CentOS Linux 7.4**
+**Ubuntu Linux 22.04**
 
 ```bash
 cd ~/MyProvider
@@ -77,16 +77,6 @@ make
 make install
 ```
 
-**Windows 10**
-
-```
-cd C:\Users\user\MyProvider
-mkdir build
-cd build
-cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release ..
-nmake
-nmake install
-```
 
 ### Related Resources
 
