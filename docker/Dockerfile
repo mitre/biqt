@@ -36,7 +36,6 @@ ENV WITH_BIQT_IRIS ${WITH_BIQT_IRIS}
 ARG WITH_BIQT_CONTACT_DETECTOR=OFF
 ENV WITH_BIQT_CONTACT_DETECTOR ${WITH_BIQT_CONTACT_DETECTOR}
 
-# Install prerequisites.
 RUN set -e && \
     echo -e "Build plan:\n" \
         "\tBIQT Face: ${WITH_BIQT_FACE} \n" \
