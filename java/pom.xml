@@ -3,10 +3,10 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.mitre</groupId>
     <artifactId>biqt</artifactId>
-    <version>0.1</version>
+    <version>23.04</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <biqt.version>0.1</biqt.version>
+        <biqt.version>23.04</biqt.version>
     </properties>
     <dependencies>
         <dependency>
@@ -15,9 +15,9 @@
             <version>1.1.1</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>2.17.1</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.6</version>
         </dependency>
     </dependencies>
     <build>
@@ -25,7 +25,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.0.2</version>
+                <version>3.5.0</version>
                 <executions>
                     <execution>
                         <id>copy-dependencies</id>
@@ -45,7 +45,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.5.0</version>
                 <configuration>
 					<finalName>biqt-${biqt.version}</finalName>
                     <outputDirectory>${output.directory}</outputDirectory>
@@ -68,16 +68,14 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>17</source>
+                    <target>17</target>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
+                
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -88,4 +86,16 @@
             </plugin>
         </plugins>
     </build>
+    <distributionManagement>
+        <repository>
+            <id>central</id>
+            <name>ETC-Artifactory-releases</name>
+            <url>https://artifacts.mitre.org:443/artifactory/maven-hyperion-local</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>ETC-Artifactory-snapshots</name>
+            <url>https://artifacts.mitre.org:443/artifactory/maven-hyperion-local</url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>

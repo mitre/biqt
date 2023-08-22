@@ -1,4 +1,4 @@
-# Docker (CentOS 7)
+# Docker (Ubuntu 22.04)
 
 ## Prerequisites
 
@@ -26,19 +26,17 @@ $ docker run --rm -it biqt-github
 BIQT v0.1 
 ``` 
   
-# Linux (CentOS Linux 7.4)
+# Linux (Ubuntu Linux 22.04)
 
 ## Prerequisites
 
-This guide targets CentOS Linux 7.4.
+This guide targets Ubuntu Linux 22.04.
 
-This provider relies on OpenCV and other core development tools including gcc. These dependencies can be installed from 
-the [Extra Packages for Enterprise Linux (EPEL)](https://fedoraproject.org/wiki/EPEL#How_can_I_use_these_extra_packages.3F) 
-repository using the following commands:
+This provider relies on OpenCV and other core development tools including gcc. These dependencies can be installed using the following commands:
 
 ```bash
-sudo yum groupinstall "Development Tools"
-sudo yum install -y cmake3 maven
+sudo apt update
+sudo apt install -y cmake build-essential libjsoncpp-dev openjdk-17-jdk
 ```
 
 ## Building and Installing
@@ -52,7 +50,7 @@ git clone git@github.com:mitre/biqt
 cd biqt
 mkdir build
 cd build
-cmake3 -DCMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j4
 sudo make install
 ```
@@ -64,29 +62,8 @@ to start BIQT!
 
 ```bash
 $> biqt --version
-BIQT v0.1
+BIQT v23.04
 ```
-
-# Windows 10
-
-## Prerequisites
-
-This guide targets Microsoft Windows 10.
-
-The following tools are required to build BIQT from source. When installing CMake and Git,
-please select the option to add the executables to the system's `PATH` environment variable.
-  * [CMake 3.9+](https://cmake.org/files/v3.9/cmake-3.9.2-win64-x64.msi)
-  * [Git 2.16+](https://git-scm.com/)
-  * [Microsoft Visual Studio Community Edition 2013](https://www.visualstudio.com/vs/older-downloads/) (Registration required.)
-
-The following software is required to build the Java bindings for BIQT.
-  * [Apache Maven 3.5.2](https://maven.apache.org/download.cgi)
-  * [Java SE JDK 9](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
-
-After installing Apache Maven and a Java JDK, set the following environment variables according to the example below. Note that
-these examples may need to be changed depending on the software versions you install and where you install them.
-  * Set `JAVA_HOME` to `C:\Program Files\Java\jdk-9.0.4`.
-  * Update `PATH` to include `C:\apache-maven-3.5.2\bin` and `C:\Program Files\Java\jdk-9.0.4\bin\server`.
 
 ## Building and Installing
 
@@ -108,10 +85,6 @@ nmake
 nmake install
 ```
 
-By default, BIQT will be installed to `C:\Program Files\biqt`. During installation, you will be reminded to set 
-the `BIQT_HOME` and `PATH` environment variables as follows:
-  * Set `BIQT_HOME` to `C:\Program Files\biqt`.
-  * Update `PATH` to include `C:\Program Files\biqt\bin`.
 
 ## Verifying installation.
 
@@ -120,5 +93,5 @@ please verify that `JAVA_HOME` and the `PATH` variables are assigned correctly.
 
 ```
 $> biqt --version
-BIQT v0.1
+BIQT v23.04
 ```

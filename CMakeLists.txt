@@ -1,25 +1,13 @@
-# #######################################################################
-# NOTICE
-#
-# This software (or technical data) was produced for the U.S. Government
-# under contract, and is subject to the Rights in Data-General Clause
-# 52.227-14, Alt. IV (DEC 2007).
-#
-# Copyright 2019 The MITRE Corporation. All Rights Reserved.
-# ####################################################################### 
-
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.16)
 project(biqt)
 set(CMAKE_CXX_STANDARD 11)
-
-# OPTIONS #####################################################################
 
 OPTION(BUILD_SHARED_LIBS "Builds shared libraries for certain dependencies. Recommended: ON" ON)
 OPTION(BUILD_STATIC_LIBS "Builds static libraries for certain dependencies. Recommended: OFF" OFF)
 OPTION(WITH_JAVA         "Builds Java bindings. Requires a JDK installation. Default: ON" ON)
 OPTION(SKIP_PROFILE      "Do not set up environment variables on Linux (turn on if you do not have root access)" OFF)
 
-set(BIQT_VERSION "0.1" 
+set(BIQT_VERSION "23.04" 
     CACHE STRING "Build version or tag associated with this BIQT release.")
 
 message("BIQT v${BIQT_VERSION}")
@@ -33,28 +21,17 @@ else()
 endif()
 
 include_directories(cxx/
-                    cxx/jsoncpp/include
                     ${EXTRA_INCLUDES})
 
-set(CPACK_PACKAGE_VERSION ${VERSION})
-set(CPACK_GENERATOR "RPM")
-set(CPACK_PACKAGE_NAME "biqt")
-set(CPACK_PACKAGE_VERSION_MAJOR 0)
-set(CPACK_PACKAGE_VERSION_MINOR 1)
-set(CPACK_PACKAGE_VERSION_PATCH 0)
-set(CPACK_PACKAGE_VERSION 0.1)
-set(CPACK_PACKAGE_RELEASE 1)
-set(CPACK_PACKAGE_CONTACT "MITRE Corporation")
-set(CPACK_PACKAGE_VENDOR "MITRE Corporation")
-set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}.${CMAKE_SYSTEM_PROCESSOR}")
-set(CPACK_RPM_PACKAGE_PROVIDES "jsoncpp == 1.8.3")
-include(CPack)
+find_package(jsoncpp REQUIRED)
 
 if(WITH_JAVA)
   # Java bindings have been requested.
+  find_package(Java COMPONENTS Development)
+ 
+  # This tends to fail unless JAVA_HOME is set.
   find_package(JNI REQUIRED)
-	add_definitions(-DBIQT_JAVA_SUPPORT)
+  add_definitions(-DBIQT_JAVA_SUPPORT)
   
   # Add Java-related includes and C/C++ source files.
   include_directories(java/src/c ${JNI_INCLUDE_DIRS})
@@ -67,10 +44,6 @@ else()
   remove_definitions(-DBIQT_JAVA_SUPPORT)
   unset(JAVA_LIBRARY_FILES)
 endif()
-
-# BUILD JSONCPP DEPENDENCY ####################################################
-
-add_subdirectory(cxx/jsoncpp)
 
 # BUILD THE BIQT LIBRARY FILE #################################################
 set(LIBRARY_FILES cxx/BIQT.cpp)
@@ -89,7 +62,7 @@ if(WITH_JAVA)
 	FILE(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/java/src/main/resources/)
 	
 	# Locate the maven executable.
-	find_program(MAVEN NAMES mvn mvnw)
+	find_program(MAVEN NAMES mvn mvnw PATHS ${CMAKE_SOURCE_DIR}/java/)
 	
 	if(NOT MAVEN)
 		message(FATAL_ERROR "Failed to find the Maven executable named mvn or mvnw. Please add it to the PATH or specify its location in CMAKE_PREFIX_PATH.")
@@ -135,7 +108,7 @@ if(WIN32)
 	
 	# Try to set BIQT_HOME and PATH. If this fails, rely on the output messages.
 	install(CODE "message(\"Remember that you must set or update the BIQT_HOME and PATH system environment variables.\")")
-  install(CODE "message(\"You may execute `SET \\\"BIQT_HOME=${CMAKE_INSTALL_PREFIX_NATIVE_ESCAPED}\\\"` to define BIQT_HOME temporarily, but it will not be saved for future use.\")")
+	install(CODE "message(\"You may execute `SET \\\"BIQT_HOME=${CMAKE_INSTALL_PREFIX_NATIVE_ESCAPED}\\\"` to define BIQT_HOME temporarily, but it will not be saved for future use.\")")
 	install(CODE "message(\"You may execute `SET PATH=%JAVA_HOME%\\\\bin\\\\server;%BIQT_HOME%\\\\bin;%PATH%` to update PATH temporarily, but it will not be saved for future use.\")")
 else()
 	# On Linux, files are installed to different locations.
@@ -148,8 +121,8 @@ else()
 		RUNTIME DESTINATION bin
 	)
 	file(WRITE  ${CMAKE_CURRENT_BINARY_DIR}/biqt.sh "export BIQT_HOME=\"${CMAKE_INSTALL_PREFIX}/share/biqt\";\n")
-  file(APPEND  ${CMAKE_CURRENT_BINARY_DIR}/biqt.sh "export PATH=$PATH:\"${CMAKE_INSTALL_PREFIX}/bin\";\n")
-  file(APPEND  ${CMAKE_CURRENT_BINARY_DIR}/biqt.sh "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:\"${CMAKE_INSTALL_PREFIX}/lib\":\"${CMAKE_INSTALL_PREFIX}/lib64\";\n")
+	file(APPEND  ${CMAKE_CURRENT_BINARY_DIR}/biqt.sh "export PATH=$PATH:\"${CMAKE_INSTALL_PREFIX}/bin\";\n")
+	file(APPEND  ${CMAKE_CURRENT_BINARY_DIR}/biqt.sh "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:\"${CMAKE_INSTALL_PREFIX}/lib\":\"${CMAKE_INSTALL_PREFIX}/lib64\";\n")
 	install(CODE "FILE(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/share/biqt/providers)")	
 	
 	install(FILES     setup_provider.py                                      DESTINATION "./share/biqt/scripts")
