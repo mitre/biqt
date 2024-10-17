@@ -86,16 +86,4 @@
             </plugin>
         </plugins>
     </build>
-    <distributionManagement>
-        <repository>
-            <id>central</id>
-            <name>ETC-Artifactory-releases</name>
-            <url>https://artifacts.mitre.org:443/artifactory/maven-hyperion-local</url>
-        </repository>
-        <snapshotRepository>
-            <id>snapshots</id>
-            <name>ETC-Artifactory-snapshots</name>
-            <url>https://artifacts.mitre.org:443/artifactory/maven-hyperion-local</url>
-        </snapshotRepository>
-    </distributionManagement>
 </project>
