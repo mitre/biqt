@@ -2,8 +2,7 @@
 
 ## Prerequisites
 
-This guide builds a BIQT Docker image which includes the reference BIQTIris and BIQTFace providers. The BIQT Java
-bindings are unavailable in this image.
+This guide builds a BIQT Docker image which includes the reference BIQTContactDetector, BIQTFace, and BIQTIris providers. The BIQT Java bindings are unavailable in this image.
 
 Docker 17 or higher is required.
 
@@ -61,37 +60,6 @@ to start BIQT!
 ## Running BIQT
 
 ```bash
-$> biqt --version
-BIQT v23.04
-```
-
-## Building and Installing
-
-As an administrator, execute the following commands from the VS2013 x64 Cross Tools Command Prompt. By default, a shortcut to 
-this prompt can be found by browsing to `C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\Tools\Shortcuts`. Right-click 
-on the shortcut and select 'Run as administrator' from the popup menu.
-
-**Note:** Using the VS2012 x64 Cross Tools Command Prompt Start Menu shortcut will not work!
-
-By default, CMake will attempt to build the BIQT Java bindings. Java bindings can be disabled by adding
-`-DWITH_JAVA=OFF` to the `cmake` command.
-
-```
-git clone git@github.com:mitre/biqt biqt
-cd biqt
-mkdir build
-cmake -G "NMake Makefiles" -DBUILD_STATIC_LIBS=OFF -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release ..
-nmake
-nmake install
-```
-
-
-## Verifying installation.
-
-After installation, you can invoke the BIQT CLI from any command prompt. If you encounter any errors,
-please verify that `JAVA_HOME` and the `PATH` variables are assigned correctly.
-
-```
 $> biqt --version
 BIQT v23.04
 ```

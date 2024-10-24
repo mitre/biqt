@@ -17,22 +17,22 @@ integrate the framework into larger systems.
 
 ### Quick Start
 
-Use the [`mitre/biqt`](https://hub.docker.com/r/mitre/biqt) image hosted on Docker Hub to access a preconfigured CentOS 7 environment with the BIQT
-command-line interface. This image includes the BIQTIris and BIQTFace providers.
+Use the [`ghcr.io/mitre/biqt`](https://github.com/mitre/biqt/pkgs/container/biqt) image hosted on GitHub to access a preconfigured Ubuntu 22.04 environment with the BIQT
+command-line interface. This image includes the BIQTFace, BIQTIris, and BIQTContactDetector providers.
 
 The following Linux-based example shows how to start a `mitre/biqt` container capable of accessing and using the 
 biometric images stored in the directory `/path/to/biometric/images` on the host filesystem.
 
 ```bash
-user@localhost:~/$ docker run --rm -v /path/to/images:/data -it mitre/biqt
+user@localhost:~/$ docker run --rm -v /path/to/images:/data -it ghcr.io/mitre/biqt
 [root@66d3679381d0 /]# biqt -m iris iris-image-001.png 
 ```
 
 ### Installation
 
-The framework targets Windows 10 and CentOS Linux 7.4.
+The framework targets Ubuntu 22.04.
 
-Build and install instructions for Docker, CentOS Linux 7.4, and Windows 10 can be found in [INSTALL.md](INSTALL.md).
+Build and install instructions for Docker and Ubuntu 22.04 can be found in [INSTALL.md](INSTALL.md).
 
 ### Integrating Providers
 
@@ -48,24 +48,6 @@ The `setup_provider.py` python script generates a directory structure with templ
 serve as the basis for a new provider. The following example demonstrates how to generate a
 new provider named `MyNewProvider`.
 
-**CentOS Linux 7.4**
-```
-python $BIQT_HOME/scripts/setup_provider.py MyNewProvider
-```
-
-**Windows 10**
-```
-python %BIQT_HOME%/scripts/setup_provider.py MyNewProvider
-```
-
-In the above example, the script creates a directory named `MyNewProvider` in the current directory and populates it with a 
-minimal descriptor, header file, code file, and CMakeLists.txt. TODO elements in each of these files indicate areas 
-which must be addressed.
-
-Once implemented, providers can be built and installed into the framework using the following commands. Note that the BIQT
-framework must already be installed and the BIQT_HOME environment variable must be set.
-
-
 **Ubuntu Linux 22.04**
 
 ```bash
@@ -76,7 +58,6 @@ cmake3 -DCMAKE_BUILD_TYPE=Release ..
 make
 make install
 ```
-
 
 ### Related Resources
 
