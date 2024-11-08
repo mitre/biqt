@@ -163,7 +163,6 @@ ARG BIQT_CONTACT_DETECTOR_COMMIT=master
 ENV BIQT_CONTACT_DETECTOR_COMMIT ${BIQT_CONTACT_DETECTOR_COMMIT}
 ARG USE_GPU=OFF
 ENV USE_GPU ${USE_GPU}
-COPY efficientnet-v2l-CDM.ckpt /tmp/efficientnet-v2l-CDM.ckpt
 # Stage 3: BIQT Contact Detector
 RUN set -e; \
     source /etc/profile.d/biqt.sh; \
@@ -180,8 +179,6 @@ RUN set -e; \
             pip install -r requirements-cpu.txt --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple; \
         fi; \
         export NUM_CORES=$(cat /proc/cpuinfo | grep -Pc "processor\s*:\s*[0-9]+\s*$"); \
-        mkdir -p config/models; \
-        cp /tmp/efficientnet-v2l-CDM.ckpt config/models; \
         mkdir build; \
         cd build; \
         cmake -DCMAKE_BUILD_TYPE=Release ..; \
