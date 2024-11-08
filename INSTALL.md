@@ -22,7 +22,7 @@ Run the `biqt-github` image using `docker`.
 ```bash
 $ docker run --rm -it biqt-github
 # biqt --version
-BIQT v0.1 
+BIQT v24.11 
 ``` 
   
 # Linux (Ubuntu Linux 22.04)
@@ -35,7 +35,7 @@ This provider relies on OpenCV and other core development tools including gcc. T
 
 ```bash
 sudo apt update
-sudo apt install -y cmake build-essential libjsoncpp-dev openjdk-17-jdk
+sudo apt install -y cmake build-essential default-jdk libjsoncpp-dev openjdk-17-jdk
 ```
 
 ## Building and Installing
@@ -54,12 +54,12 @@ make -j4
 sudo make install
 ```
 
-Remember to open a new console window or explicitly call `source /etc/profile.d/biqt` before attempting
+Remember to open a new console window or explicitly call `source /etc/profile.d/biqt.sh` before attempting
 to start BIQT!
 
 ## Running BIQT
 
 ```bash
 $> biqt --version
-BIQT v23.04
+BIQT v24.11
 ```
