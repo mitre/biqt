@@ -25,15 +25,15 @@ import cz.adamh.utils.NativeUtils;
  */
 public class BIQT {
   private static final Logger logger = LoggerFactory.getLogger(BIQT.class);
-  private static final String os = System.getProperty("os.name");
+  private static final String OS = System.getProperty("os.name");
 
   /* Loads the necessary native code libraries from the jar file */
   static {
     try {
-      if (os.startsWith("Windows")) {
+      if (OS.startsWith("Windows")) {
         NativeUtils.loadLibraryFromJar("/biqtapi.dll");
         NativeUtils.loadLibraryFromJar("/biqt_java.dll");
-      } else if (os.startsWith("Mac")) {
+      } else if (OS.startsWith("Mac")) {
         NativeUtils.loadLibraryFromJar("/libbiqtapi.dylib");
         NativeUtils.loadLibraryFromJar("/libbiqt_java.dylib");
       } else {
@@ -75,7 +75,7 @@ public class BIQT {
                                       List<String> inputFiles) {
     String result;
     JSONParser parser = new JSONParser();
-    List<JSONObject> results = new ArrayList();
+    List<JSONObject> results = new ArrayList<>();
     for (String inputFile : inputFiles) {
       result = runModality(modality, inputFile);
       try {
@@ -83,7 +83,7 @@ public class BIQT {
         results.add(json);
       } catch (ParseException e) {
         logger.error(
-            String.format("BIQT response for file '%s' was malformed: \n%s", inputFile, result),
+            String.format("BIQT response for file '%s' was malformed: %n%s", inputFile, result),
             e);
       }
     }
@@ -117,7 +117,7 @@ public class BIQT {
                                       List<String> inputFiles) {
     String result;
     JSONParser parser = new JSONParser();
-    List<JSONObject> results = new ArrayList();
+    List<JSONObject> results = new ArrayList<>();
 
     for (String inputFile : inputFiles) {
       result = runProvider(provider, inputFile);
@@ -126,7 +126,7 @@ public class BIQT {
         results.add(json);
       } catch (ParseException e) {
         logger.error(
-            String.format("BIQT response for file '%s' was malformed: \n%s", inputFile, result));
+            String.format("BIQT response for file '%s' was malformed: %n%s", inputFile, result));
       }
     }
     return results;
