@@ -39,6 +39,7 @@ ENV WITH_BIQT_CONTACT_DETECTOR ${WITH_BIQT_CONTACT_DETECTOR}
 ARG DEBIAN_FRONTEND=noninteractive
 ENV DEBIAN_FRONTEND ${DEBIAN_FRONTEND}
 
+# Stage 1: Install build dependencies
 RUN set -e && \
     echo -e "Build plan:\n" \
         "\tBIQT Face: ${WITH_BIQT_FACE} \n" \
@@ -46,7 +47,7 @@ RUN set -e && \
         "\tBIQT Contact Detector: ${WITH_BIQT_CONTACT_DETECTOR}" && \
     apt update && \
     apt upgrade -y && \
-    apt -y install --no-install-recommends \
+    apt install -y --no-install-recommends \
         build-essential \
         cmake \
         curl \
@@ -55,16 +56,6 @@ RUN set -e && \
         libopencv-dev \
         openjdk-17-jdk && \
     apt clean && rm -rf /var/lib/apt/lists/* && \
-    if [[ "${WITH_BIQT_FACE}" == "ON" ]]; then \
-        set -e; \
-        echo "Installing QT5 for BIQT Face."; \
-        apt -y install qtbase5-dev --no-install-recommends && \
-        apt clean && rm -rf /var/lib/apt/lists/* && \
-        if  [ "${QUIRK_STRIP_QT5CORE_METADATA}" == "ON" ]; then \
-            echo "Stripping libQt5Core.so of its ABI metadata."; \
-            strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so; \
-        fi; \
-    fi; \
     # Install MITRE certificate chain (if opted in).
     for i in "http://pki.mitre.org/MITRE%20BA%20Root.crt" "http://pki.mitre.org/MITRE%20BA%20NPE%20CA-1.crt" "http://pki.mitre.org/MITRE%20BA%20NPE%20CA-3(1).crt" "http://pki.mitre.org/ZScaler_Root.crt"; \
     do \
@@ -77,7 +68,7 @@ RUN set -e && \
 ARG BIQT_COMMIT=master
 ENV BIQT_COMMIT ${BIQT_COMMIT}
 
-# Clone and install BIQT from MITRE Github.
+# Stage 2: Clone and install BIQT from MITRE Github.
 RUN set -e; \
     echo "BIQT_COMMIT=${BIQT_COMMIT}" ; \
     mkdir /app 2>/dev/null || true; \
@@ -98,7 +89,7 @@ RUN set -e; \
 ARG BIQT_IRIS_COMMIT=master
 ENV BIQT_IRIS_COMMIT ${BIQT_IRIS_COMMIT}
 
-# Stage 2: BIQT Iris
+# Stage 3: BIQT Iris
 RUN set -e; \
     if [ "${WITH_BIQT_IRIS}" == "ON" ]; then \
         echo "BIQT_IRIS_COMMIT: ${BIQT_IRIS_COMMIT}"; \
@@ -116,10 +107,26 @@ RUN set -e; \
         make install; \
     else \
         echo "Skipping BIQT Iris."; \
-    fi; \
-    # Clone and install OpenBR from GitHub. 
-    set -e; \
+    fi;
+
+ARG BIQT_FACE_COMMIT=master
+ENV BIQT_FACE_COMMIT ${BIQT_FACE_COMMIT}
+
+# Stage 4: BIQT Face
+RUN set -e; \
+    source /etc/profile.d/biqt.sh; \
     if [ "${WITH_BIQT_FACE}" == "ON" ]; then \
+        # Install BIQT Face dependencies
+        set -e; \
+        echo "Installing QT5 for BIQT Face."; \
+        apt update && \
+        apt install -y qtbase5-dev --no-install-recommends && \
+        apt clean && rm -rf /var/lib/apt/lists/* && \
+        if  [ "${QUIRK_STRIP_QT5CORE_METADATA}" == "ON" ]; then \
+            echo "Stripping libQt5Core.so of its ABI metadata."; \
+            strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so; \
+        fi; \
+        # Clone and install OpenBR from GitHub. 
         echo "Using OpenSSL Configuration at ${OPENSSL_CONF}: `cat ${OPENSSL_CONF}`"; \
         mkdir /app 2>/dev/null || true; \
         cd /app; \
@@ -132,18 +139,7 @@ RUN set -e; \
         export NUM_CORES=$(cat /proc/cpuinfo | grep -Pc "processor\s*:\s*[0-9]+\s*$"); \
         make -j${NUM_CORES}; \
         make install; \
-    else \
-        echo "Skipping OpenBR build for BIQT Face. BIQT Face not requested."; \
-	mkdir /opt/openbr || true; \
- 	echo "WITH_BIQT_FACE was not set to ON so openbr not compiled and installed." > /opt/openbr/README; \
-    fi;
-
-ARG BIQT_FACE_COMMIT=master
-ENV BIQT_FACE_COMMIT ${BIQT_FACE_COMMIT}
-# Clone and install BIQT Face from the MITRE github repository. 
-RUN set -e; \
-    source /etc/profile.d/biqt.sh; \
-    if [ "${WITH_BIQT_FACE}" == "ON" ]; then \
+        # Clone and install BIQT Face from the MITRE github repository. 
         echo "BIQT_FACE_COMMIT: ${BIQT_FACE_COMMIT}"; \        
         echo "Using OpenSSL Configuration at ${OPENSSL_CONF}: `cat ${OPENSSL_CONF}`"; \
         mkdir /app 2>/dev/null || true; \
@@ -157,17 +153,21 @@ RUN set -e; \
         make install; \
     else \
         echo "Skipping BIQT Face."; \
+        mkdir /opt/openbr || true; \
+        echo "WITH_BIQT_FACE was not set to ON so openbr not compiled and installed." > /opt/openbr/README; \
     fi;
 
 ARG BIQT_CONTACT_DETECTOR_COMMIT=master
 ENV BIQT_CONTACT_DETECTOR_COMMIT ${BIQT_CONTACT_DETECTOR_COMMIT}
 ARG USE_GPU=OFF
 ENV USE_GPU ${USE_GPU}
-# Stage 3: BIQT Contact Detector
+
+# Stage 5: BIQT Contact Detector
 RUN set -e; \
     source /etc/profile.d/biqt.sh; \
     if [ "${WITH_BIQT_CONTACT_DETECTOR}" == "ON" ]; then \
-        apt update && apt install -y python3 python3-dev python3-pip --no-install-recommends && \
+        apt update && \
+        apt install -y python3 python3-dev python3-pip --no-install-recommends && \
         apt clean && rm -rf /var/lib/apt/lists/* && \
         ( mkdir /app 2>/dev/null || true ); \
         cd /app; \

@@ -10,6 +10,7 @@
 
 package org.mitre.biqt;
 
+import jakarta.annotation.PreDestroy;
 import java.util.List;
 import java.util.ArrayList;
 import java.io.IOException;
@@ -54,6 +55,14 @@ public class BIQT {
    * Creates a new BIQT instance
    */
   public BIQT() { this.initialize(); }
+
+  /** 
+   * Trigger pointer cleanup before shutting down
+   */
+  @PreDestroy
+  public void destroy() {
+    this.cleanup();
+  }
 
   public native List<ProviderInfo> getProviders();
 
@@ -147,12 +156,6 @@ public class BIQT {
    * @param inputFile The file to analyze with the given provider.
    */
   private native String runModality(String modality, String inputfile);
-
-  /**
-   * Cleans up and frees any memory allocated in native code. This is
-   * automatically called by the Java garbage collector.
-   */
-  protected void finalize() { this.cleanup(); }
 
   /**
    * Cleans up and frees any memory allocated in native code.
