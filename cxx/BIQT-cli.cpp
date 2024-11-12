@@ -364,8 +364,7 @@ int main(int argc, char **argv)
                             name_tab = "\t";
                         } 
                         std::cout << p->name << name_tab << p->version << "\t"
-                                  << p->modality << "\t" << p->description << "\t"
-                                  << std::endl;
+                                  << p->modality << "\t\t" << p->description << std::endl;
                     }
                 }
                 std::cout << std::endl;
