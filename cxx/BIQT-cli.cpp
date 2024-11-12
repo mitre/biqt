@@ -360,9 +360,9 @@ int main(int argc, char **argv)
                 for (const auto &p : app.getProviders()) {
                     if (!optarg || p->modality == optarg) {
                         std::string name_tab = "\t\t";
-                        if (p->name.length() > 8 && p->name.length() < 16) {
+                        if (p->name.length() > 16) {
                             name_tab = "\t";
-                        }
+                        } 
                         std::cout << p->name << name_tab << p->version << "\t"
                                   << p->modality << "\t" << p->description << "\t"
                                   << std::endl;
