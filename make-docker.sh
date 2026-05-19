@@ -59,4 +59,5 @@ DOCKER_BUILDKIT=1 docker build \
 	--secret id=ALT_OPENSSL_CONF,src=docker/openssl.cnf \
 	--progress=plain \
  	--tag ghcr.io/mitre/biqt:${BIQT_TAG} \
+	--platform=linux/amd64 \
 	docker/
