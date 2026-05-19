@@ -17,7 +17,7 @@ integrate the framework into larger systems.
 
 ### Quick Start
 
-Use the [`ghcr.io/mitre/biqt`](https://github.com/mitre/biqt/pkgs/container/biqt) image hosted on GitHub to access a preconfigured Ubuntu 22.04 environment with the BIQT
+Use the [`ghcr.io/mitre/biqt`](https://github.com/mitre/biqt/pkgs/container/biqt) image hosted on GitHub to access a preconfigured DHI Debian 12 environment with the BIQT
 command-line interface. This image includes the BIQTFace, BIQTIris, and BIQTContactDetector providers.
 
 The following Linux-based example shows how to start a `mitre/biqt` container capable of accessing and using the 
@@ -30,9 +30,9 @@ user@localhost:~/$ docker run --rm -v /path/to/images:/data -it ghcr.io/mitre/bi
 
 ### Installation
 
-The framework targets Ubuntu 22.04.
+The framework targets DHI Debian 12.
 
-Build and install instructions for Docker and Ubuntu 22.04 can be found in [INSTALL.md](INSTALL.md).
+Build and install instructions for Docker and DHI Debian 12 can be found in [INSTALL.md](INSTALL.md).
 
 ### Integrating Providers
 
@@ -48,7 +48,7 @@ The `setup_provider.py` python script generates a directory structure with templ
 serve as the basis for a new provider. The following example demonstrates how to generate a
 new provider named `MyNewProvider`.
 
-**Ubuntu Linux 22.04**
+**DHI Debian 12 Linux 22.04**
 
 ```bash
 cd ~/MyProvider
