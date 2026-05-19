@@ -187,11 +187,18 @@ COPY --from=build /usr/local /usr/local
 COPY --from=build /etc/profile.d/biqt.sh /etc/profile.d/biqt.sh
 COPY --from=build /opt/openbr /opt/openbr
 
+ENV BIQT_HOME=/usr/local/share/biqt
+ENV PATH="/usr/local/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/local/lib64"
+
 ARG QUIRK_STRIP_QT5CORE_METADATA=OFF
 ENV QUIRK_STRIP_QT5CORE_METADATA ${QUIRK_STRIP_QT5CORE_METADATA}
 
 RUN apt update && \
-     DEBIAN_FRONTEND=noninteractive apt -y install openjdk-17-jre-headless g++ libopencv-core406 libopencv-highgui406 libopencv-imgcodecs406 libopencv-imgproc406 libjsoncpp25 libqt5xml5 libqt5sql5 libpython3.11 libopencv-objdetect406 libqt5widgets5 libopencv-ml406 libopencv-videoio406 libpython3.11-dev python3-distutils && \
+     DEBIAN_FRONTEND=noninteractive apt -y install openjdk-17-jre-headless g++ libopencv-core406 libopencv-highgui406 libopencv-imgcodecs406 libopencv-imgproc406 libjsoncpp25 libqt5xml5 libqt5sql5 libpython3.11 libopencv-objdetect406 libqt5widgets5 libopencv-ml406 libopencv-videoio406 libpython3.11-dev python3-distutils python3-pkg-resources && \
+     mkdir -p /etc/ld.so.conf.d && \
+     printf "/usr/local/lib\\n/usr/local/lib64\\n" > /etc/ld.so.conf.d/biqt.conf && \
+     ldconfig && \
      if [ "${QUIRK_STRIP_QT5CORE_METADATA}" == "ON" ]; then \
          echo "Stripping libQt5Core.so of its ABI metadata."; \
          strip --remove-section=.note.ABI-tag /usr/lib/*-linux-gnu/libQt5Core.so*; \
