@@ -6,7 +6,7 @@
 #
 # Copyright The MITRE Corporation. All Rights Reserved.
 
-FROM ubuntu:22.04 AS build
+FROM dhi.io/debian-base:bookworm-debian12-dev AS build
 
 SHELL ["/bin/bash", "-c"] 
 
@@ -20,21 +20,16 @@ SHELL ["/bin/bash", "-c"]
 # used to remove this metadata which allows the library to link as expected. However, the default setting is OFF
 # because the actual reason for the perceived incompatibility is not understood.
 ARG QUIRK_STRIP_QT5CORE_METADATA=OFF
-ENV QUIRK_STRIP_QT5CORE_METADATA ${QUIRK_STRIP_QT5CORE_METADATA}
-
-# Building on MITRE-internal infrastructure requires the installation of the MITRE certificate chain. This is OPTIONAL
-# for external systems. The chain will be installed when provided the build argument `INSTALL_MITRE_CERTIFICATES=ON`.
-ARG INSTALL_MITRE_CERTIFICATES=OFF
-ENV INSTALL_MITRE_CERTIFICATES ${INSTALL_MITRE_CERTIFICATES}
+ENV QUIRK_STRIP_QT5CORE_METADATA=${QUIRK_STRIP_QT5CORE_METADATA}
 
 ARG WITH_BIQT_FACE=OFF
-ENV WITH_BIQT_FACE ${WITH_BIQT_FACE}
+ENV WITH_BIQT_FACE=${WITH_BIQT_FACE}
 
 ARG WITH_BIQT_IRIS=OFF
-ENV WITH_BIQT_IRIS ${WITH_BIQT_IRIS}
+ENV WITH_BIQT_IRIS=${WITH_BIQT_IRIS}
 
 ARG WITH_BIQT_CONTACT_DETECTOR=OFF
-ENV WITH_BIQT_CONTACT_DETECTOR ${WITH_BIQT_CONTACT_DETECTOR}
+ENV WITH_BIQT_CONTACT_DETECTOR=${WITH_BIQT_CONTACT_DETECTOR}
 
 RUN set -e && \
     echo -e "Build plan:\n" \
@@ -43,29 +38,33 @@ RUN set -e && \
         "\tBIQT Contact Detector: ${WITH_BIQT_CONTACT_DETECTOR}" && \
     apt update && \
     apt upgrade -y; \
-    DEBIAN_FRONTEND=noninteractive apt -y install git less vim cmake g++ curl libopencv-dev libjsoncpp-dev openjdk-17-jdk pip && \
-    pip install wheel; \
+    DEBIAN_FRONTEND=noninteractive apt -y install \
+    ca-certificates \
+    ca-certificates-java \
+    git less vim cmake g++ curl \
+    libopencv-dev libjsoncpp-dev \
+    openjdk-17-jdk \
+    python3-pip python3-wheel && \
+    update-ca-certificates; \
     if [[ "${WITH_BIQT_FACE}" == "ON" ]]; then \
         set -e; \
         echo "Installing QT5 for BIQT Face."; \
         DEBIAN_FRONTEND=noninteractive apt -y install qtbase5-dev; \
         if  [ "${QUIRK_STRIP_QT5CORE_METADATA}" == "ON" ]; then \
             echo "Stripping libQt5Core.so of its ABI metadata."; \
-            strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so; \
+            strip --remove-section=.note.ABI-tag /usr/lib/*-linux-gnu/libQt5Core.so*; \
         fi; \
     fi;
 
-# Install MITRE certificate chain (if opted in).
-RUN for i in "http://pki.mitre.org/MITRE%20BA%20Root.crt" "http://pki.mitre.org/MITRE%20BA%20NPE%20CA-1.crt" "http://pki.mitre.org/MITRE%20BA%20NPE%20CA-3(1).crt" "http://pki.mitre.org/ZScaler_Root.crt"; \
-    do \
-        if [ "${INSTALL_MITRE_CERTIFICATES}" == "ON" ]; then \
-            echo "Adding ${i}."; \
-            curl $i >> /etc/ssl/certs/ca-certificates.crt; \
-        fi; \
-    done;
+# Building on some infrastructure requires the installation of a certificate authority. This is OPTIONAL
+# for external systems and will only be installed when the ca_file secret is provided in the build command.
+RUN --mount=type=secret,id=ca_file,required=false \
+    if [[ -f /run/secrets/ca_file ]]; then \
+       cat /run/secrets/ca_file >> /etc/ssl/certs/ca-certificates.crt; \
+    fi
 
 ARG BIQT_COMMIT
-ENV BIQT_COMMIT ${BIQT_COMMIT}
+ENV BIQT_COMMIT=${BIQT_COMMIT}
 
 # Clone and install BIQT from MITRE Github.
 RUN set -e; \
@@ -86,7 +85,7 @@ RUN set -e; \
     source /etc/profile.d/biqt.sh
 
 ARG BIQT_IRIS_COMMIT
-ENV BIQT_IRIS_COMMIT ${BIQT_IRIS_COMMIT}
+ENV BIQT_IRIS_COMMIT=${BIQT_IRIS_COMMIT}
 
 # Stage 2: BIQT Iris
 RUN set -e; \
@@ -130,7 +129,7 @@ RUN set -e; \
     fi
 
 ARG BIQT_FACE_COMMIT
-ENV BIQT_FACE_COMMIT ${BIQT_FACE_COMMIT}
+ENV BIQT_FACE_COMMIT=${BIQT_FACE_COMMIT}
 # Clone and install BIQT Face from the MITRE github repository. 
 RUN set -e; \
     source /etc/profile.d/biqt.sh; \
@@ -152,7 +151,7 @@ RUN set -e; \
 
 
 ARG BIQT_CONTACT_DETECTOR_COMMIT
-ENV BIQT_CONTACT_DETECTOR_COMMIT ${BIQT_CONTACT_DETECTOR_COMMIT}
+ENV BIQT_CONTACT_DETECTOR_COMMIT=${BIQT_CONTACT_DETECTOR_COMMIT}
 # Stage 3: BIQT Contact Detector
 RUN set -e; \
     source /etc/profile.d/biqt.sh; \
@@ -161,7 +160,7 @@ RUN set -e; \
       cd /app; \
       git clone https://github.com/mitre/biqt-contact-detector biqt-contact-detector --branch "${BIQT_CONTACT_DETECTOR_COMMIT}" --depth 1; \
       cd biqt-contact-detector; \
-      pip install -r requirements.txt; \
+      python3 -m pip install --break-system-packages -r requirements.txt; \
       export NUM_CORES=$(cat /proc/cpuinfo | grep -Pc "processor\s*:\s*[0-9]+\s*$"); \
       mkdir build; \
       cd build; \
@@ -171,17 +170,31 @@ RUN set -e; \
     fi;
 
 # Reduce image size.
-FROM ubuntu:22.04 AS release
+FROM dhi.io/debian-base:bookworm-debian12-dev AS release
 SHELL ["/bin/bash", "-c"] 
 COPY --from=build /usr/local /usr/local
 COPY --from=build /etc/profile.d/biqt.sh /etc/profile.d/biqt.sh
 COPY --from=build /opt/openbr /opt/openbr
 
+ENV BIQT_HOME=/usr/local/share/biqt
+ENV PATH="/usr/local/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/local/lib64"
+
 ARG QUIRK_STRIP_QT5CORE_METADATA=OFF
-ENV QUIRK_STRIP_QT5CORE_METADATA ${QUIRK_STRIP_QT5CORE_METADATA}
+ENV QUIRK_STRIP_QT5CORE_METADATA=${QUIRK_STRIP_QT5CORE_METADATA}
 
 RUN apt update && \
-     DEBIAN_FRONTEND=noninteractive apt -y install openjdk-17-jre-headless g++ libopencv-core4.5d libopencv-highgui4.5d libopencv-imgcodecs4.5d libopencv-imgproc4.5d libjsoncpp25 libqt5xml5 libqt5sql5  libpython3.10 libopencv-objdetect4.5d libqt5widgets5 libopencv-ml4.5d libopencv-videoio4.5d libpython3.10-dev python3-distutils && \
-     ( [ "${QUIRK_STRIP_QT5CORE_METADATA}" == "ON" ] && echo "Stripping libQt5Core.so of its ABI metadata." && strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so* )
+     DEBIAN_FRONTEND=noninteractive apt -y install openjdk-17-jre-headless \
+     g++ libopencv-core406 libopencv-highgui406 libopencv-imgcodecs406 \
+     libopencv-imgproc406 libjsoncpp25 libqt5xml5 libqt5sql5 libpython3.11 \
+     libopencv-objdetect406 libqt5widgets5 libopencv-ml406 libopencv-videoio406 \
+     libpython3.11-dev python3-distutils python3-pkg-resources && \
+     mkdir -p /etc/ld.so.conf.d && \
+     printf "/usr/local/lib\\n/usr/local/lib64\\n" > /etc/ld.so.conf.d/biqt.conf && \
+     ldconfig && \
+     if [ "${QUIRK_STRIP_QT5CORE_METADATA}" == "ON" ]; then \
+         echo "Stripping libQt5Core.so of its ABI metadata."; \
+         strip --remove-section=.note.ABI-tag /usr/lib/*-linux-gnu/libQt5Core.so*; \
+     fi
 
 ENTRYPOINT ["/bin/bash", "-l"]

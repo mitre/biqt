@@ -49,14 +49,14 @@ if [ "${BIQT_TAG}" == "master" ]; then
 fi
 
 # Added `--pull` argument to force retrieval of the latest base image.
+# Remove `--secret` argument if organization certificate does not need to be installed.
 DOCKER_BUILDKIT=1 docker build \
 	--pull \
 	${BIQT_DOCKER_BUILD_ARGS[@]} \
-	--build-arg INSTALL_MITRE_CERTIFICATES=ON \
 	--build-arg QUIRK_OPENSSL_RENEGOTIATION=ON \
 	--build-arg QUIRK_STRIP_QT5CORE_METADATA=ON \
-	--secret id=SSH_PRIVATE_KEY,src=$HOME/.ssh/id_rsa \
-	--secret id=ALT_OPENSSL_CONF,src=docker/openssl.cnf \
+	--secret id=ca_file,src=ca_file.crt \
 	--progress=plain \
  	--tag ghcr.io/mitre/biqt:${BIQT_TAG} \
+	--platform=linux/amd64 \
 	docker/
