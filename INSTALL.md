@@ -22,7 +22,7 @@ Run the `biqt-github` image using `docker`.
 ```bash
 $ docker run --rm -it biqt-github
 # biqt --version
-BIQT v24.11 
+BIQT 26.05 
 ``` 
   
 # Linux (Ubuntu Linux 22.04)
