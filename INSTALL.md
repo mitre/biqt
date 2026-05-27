@@ -61,5 +61,5 @@ to start BIQT!
 
 ```bash
 $> biqt --version
-BIQT v23.04
+BIQT v26.05
 ```
