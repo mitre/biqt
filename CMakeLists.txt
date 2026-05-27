@@ -7,7 +7,7 @@ OPTION(BUILD_STATIC_LIBS "Builds static libraries for certain dependencies. Reco
 OPTION(WITH_JAVA         "Builds Java bindings. Requires a JDK installation. Default: ON" ON)
 OPTION(SKIP_PROFILE      "Do not set up environment variables on Linux (turn on if you do not have root access)" OFF)
 
-set(BIQT_VERSION "24.11" 
+set(BIQT_VERSION "26.05" 
     CACHE STRING "Build version or tag associated with this BIQT release.")
 
 message("BIQT v${BIQT_VERSION}")
