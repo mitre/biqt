@@ -17,17 +17,17 @@ public class TestBIQT {
     assertTrue(providers.size() >= 2);
 
     for (ProviderInfo p : providers) {
-	  if (p.getName().equals("BIQTFace") || p.getName().equals("BIQTIris")) {
-		  foundCount++;
-	  }
+      if (p.getName().equals("BIQTFace") || p.getName().equals("BIQTIris") || p.getName().equals("BIQTContactDetector")) {
+        foundCount++;
+      }
     }
-    assertEquals(2, foundCount);
+    assertEquals(3, foundCount);
   }
 
   @Test
   public void testRunProvider() {
     BIQT app = new BIQT();
-    ArrayList<String> inputFiles = new ArrayList();
+    ArrayList<String> inputFiles = new ArrayList<>();
     inputFiles.add(System.getenv("BIQT_HOME") + "/../images/iris1.bmp");
     List<JSONObject> results = app.runProvider("BIQTIris", inputFiles);
     assertTrue("Received an empty result set", results.size() > 0);
@@ -36,7 +36,7 @@ public class TestBIQT {
   @Test
   public void testRunModality() {
     BIQT app = new BIQT();
-    ArrayList<String> inputFiles = new ArrayList();
+    ArrayList<String> inputFiles = new ArrayList<>();
     inputFiles.add(System.getenv("BIQT_HOME") + "/../images/iris1.bmp");
     List<JSONObject> results = app.runModality("iris", inputFiles);
     assertTrue("Received an empty result set", results.size() > 0);

@@ -34,7 +34,7 @@ int init_jvm(JavaVM **jvm, JNIEnv **env, jclass *cls, std::string className,
     JavaVMInitArgs vm_args;                        // Initialization arguments
     JavaVMOption *options = new JavaVMOption[1];   // JVM invocation options
     options[0].optionString = classPathOption;
-    vm_args.version = JNI_VERSION_1_6;             // minimum Java version
+    vm_args.version = JNI_VERSION_10;             // minimum Java version
     vm_args.nOptions = 1;                          // number of options
     vm_args.options = options;
     vm_args.ignoreUnrecognized = false;  // invalid options make the init fail

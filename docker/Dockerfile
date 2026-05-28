@@ -31,30 +31,31 @@ ENV WITH_BIQT_IRIS=${WITH_BIQT_IRIS}
 ARG WITH_BIQT_CONTACT_DETECTOR=OFF
 ENV WITH_BIQT_CONTACT_DETECTOR=${WITH_BIQT_CONTACT_DETECTOR}
 
+ARG DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
+
+# Stage 1: Install build dependencies
 RUN set -e && \
     echo -e "Build plan:\n" \
         "\tBIQT Face: ${WITH_BIQT_FACE} \n" \
         "\tBIQT Iris: ${WITH_BIQT_IRIS} \n" \
         "\tBIQT Contact Detector: ${WITH_BIQT_CONTACT_DETECTOR}" && \
     apt update && \
-    apt upgrade -y; \
-    DEBIAN_FRONTEND=noninteractive apt -y install \
-    ca-certificates \
-    ca-certificates-java \
-    git less vim cmake g++ curl \
-    libopencv-dev libjsoncpp-dev \
-    openjdk-17-jdk \
-    python3-pip python3-wheel && \
-    update-ca-certificates; \
-    if [[ "${WITH_BIQT_FACE}" == "ON" ]]; then \
-        set -e; \
-        echo "Installing QT5 for BIQT Face."; \
-        DEBIAN_FRONTEND=noninteractive apt -y install qtbase5-dev; \
-        if  [ "${QUIRK_STRIP_QT5CORE_METADATA}" == "ON" ]; then \
-            echo "Stripping libQt5Core.so of its ABI metadata."; \
-            strip --remove-section=.note.ABI-tag /usr/lib/*-linux-gnu/libQt5Core.so*; \
-        fi; \
-    fi;
+    apt upgrade -y && \
+    apt install -y --no-install-recommends \
+        ca-certificates \
+        ca-certificates-java \
+        cmake \
+        curl \
+        g++ \
+        gcc \
+        git \
+        libjsoncpp-dev \
+        libopencv-dev \
+        make \
+        openjdk-17-jdk && \
+    apt clean && rm -rf /var/lib/apt/lists/* && \
+    update-ca-certificates
 
 # Building on some infrastructure requires the installation of a certificate authority. This is OPTIONAL
 # for external systems and will only be installed when the ca_file secret is provided in the build command.
@@ -66,7 +67,7 @@ RUN --mount=type=secret,id=ca_file,required=false \
 ARG BIQT_COMMIT
 ENV BIQT_COMMIT=${BIQT_COMMIT}
 
-# Clone and install BIQT from MITRE Github.
+# Stage 2: Clone and install BIQT from MITRE Github.
 RUN set -e; \
     echo "BIQT_COMMIT=${BIQT_COMMIT}" ; \
     mkdir /app 2>/dev/null || true; \
@@ -87,7 +88,7 @@ RUN set -e; \
 ARG BIQT_IRIS_COMMIT
 ENV BIQT_IRIS_COMMIT=${BIQT_IRIS_COMMIT}
 
-# Stage 2: BIQT Iris
+# Stage 3: BIQT Iris
 RUN set -e; \
     if [ "${WITH_BIQT_IRIS}" == "ON" ]; then \
         echo "BIQT_IRIS_COMMIT: ${BIQT_IRIS_COMMIT}"; \
@@ -107,33 +108,36 @@ RUN set -e; \
         echo "Skipping BIQT Iris."; \
     fi;
 
-# Clone and install OpenBR from GitHub. 
+ARG BIQT_FACE_COMMIT
+ENV BIQT_FACE_COMMIT=${BIQT_FACE_COMMIT}
+
+# Stage 4: BIQT Face
 RUN set -e; \
     if [ "${WITH_BIQT_FACE}" == "ON" ]; then \
+        # Install BIQT Face dependencies
+        echo "Installing QT5 for BIQT Face."; \
+        source /etc/profile.d/biqt.sh; \
+        apt update && \
+        apt install -y qtbase5-dev --no-install-recommends && \
+        apt clean && rm -rf /var/lib/apt/lists/* && \
+        if  [ "${QUIRK_STRIP_QT5CORE_METADATA}" == "ON" ]; then \
+            echo "Stripping libQt5Core.so of its ABI metadata."; \
+            strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so; \
+        fi; \
+        # Clone and install OpenBR from GitHub. 
         echo "Using OpenSSL Configuration at ${OPENSSL_CONF}: `cat ${OPENSSL_CONF}`"; \
         mkdir /app 2>/dev/null || true; \
         cd /app; \
         git clone https://github.com/biometrics/openbr.git openbr || exit 5; \
         cd /app/openbr; \
-	git checkout 1e1c8f; \
+	    git checkout 1e1c8f; \
         mkdir build; \
         cd build; \
         cmake -DCMAKE_BUILD_TYPE=Release -DBR_WITH_OPENCV_NONFREE=OFF -DCMAKE_INSTALL_PREFIX=/opt/openbr ..; \
         export NUM_CORES=$(cat /proc/cpuinfo | grep -Pc "processor\s*:\s*[0-9]+\s*$"); \
         make -j${NUM_CORES}; \
         make install; \
-    else \
-        echo "Skipping OpenBR build for BIQT Face. BIQT Face not requested."; \
-	mkdir /opt/openbr || true; \
- 	echo "WITH_BIQT_FACE was not set to ON so openbr not compiled and installed." > /opt/openbr/README; \
-    fi
-
-ARG BIQT_FACE_COMMIT
-ENV BIQT_FACE_COMMIT=${BIQT_FACE_COMMIT}
-# Clone and install BIQT Face from the MITRE github repository. 
-RUN set -e; \
-    source /etc/profile.d/biqt.sh; \
-    if [ "${WITH_BIQT_FACE}" == "ON" ]; then \
+        # Clone and install BIQT Face from the MITRE github repository.
         echo "BIQT_FACE_COMMIT: ${BIQT_FACE_COMMIT}"; \        
         echo "Using OpenSSL Configuration at ${OPENSSL_CONF}: `cat ${OPENSSL_CONF}`"; \
         mkdir /app 2>/dev/null || true; \
@@ -147,26 +151,38 @@ RUN set -e; \
         make install; \
     else \
         echo "Skipping BIQT Face."; \
+        mkdir /opt/openbr || true; \
+        echo "WITH_BIQT_FACE was not set to ON so openbr not compiled and installed." > /opt/openbr/README; \
     fi;
 
 
 ARG BIQT_CONTACT_DETECTOR_COMMIT
 ENV BIQT_CONTACT_DETECTOR_COMMIT=${BIQT_CONTACT_DETECTOR_COMMIT}
-# Stage 3: BIQT Contact Detector
+ARG USE_GPU=OFF
+ENV USE_GPU=${USE_GPU}
+
+# Stage 5: BIQT Contact Detector
 RUN set -e; \
     source /etc/profile.d/biqt.sh; \
     if [ "${WITH_BIQT_CONTACT_DETECTOR}" == "ON" ]; then \
-      ( mkdir /app 2>/dev/null || true ); \
-      cd /app; \
-      git clone https://github.com/mitre/biqt-contact-detector biqt-contact-detector --branch "${BIQT_CONTACT_DETECTOR_COMMIT}" --depth 1; \
-      cd biqt-contact-detector; \
-      python3 -m pip install --break-system-packages -r requirements.txt; \
-      export NUM_CORES=$(cat /proc/cpuinfo | grep -Pc "processor\s*:\s*[0-9]+\s*$"); \
-      mkdir build; \
-      cd build; \
-      cmake -DCMAKE_BUILD_TYPE=Release ..; \
-      make -j${NUM_CORES}; \
-      make install; \
+        apt update && \
+        apt install -y python3 python3-dev python3-pip --no-install-recommends && \
+        apt clean && rm -rf /var/lib/apt/lists/* && \
+        ( mkdir /app 2>/dev/null || true ); \
+        cd /app; \
+        git clone https://github.com/mitre/biqt-contact-detector biqt-contact-detector --branch "${BIQT_CONTACT_DETECTOR_COMMIT}" --depth 1; \
+        cd biqt-contact-detector; \
+        if [ "${USE_GPU}" == "ON"]; then \
+            python3 -m pip install --break-system-packages -r requirements.txt; \
+        else \
+            python3 -m pip install --break-system-packages -r requirements-cpu.txt --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple; \
+        fi; \
+        export NUM_CORES=$(cat /proc/cpuinfo | grep -Pc "processor\s*:\s*[0-9]+\s*$"); \
+        mkdir build; \
+        cd build; \
+        cmake -DCMAKE_BUILD_TYPE=Release ..; \
+        make -j${NUM_CORES}; \
+        make install; \
     fi;
 
 # Reduce image size.
@@ -184,17 +200,33 @@ ARG QUIRK_STRIP_QT5CORE_METADATA=OFF
 ENV QUIRK_STRIP_QT5CORE_METADATA=${QUIRK_STRIP_QT5CORE_METADATA}
 
 RUN apt update && \
-     DEBIAN_FRONTEND=noninteractive apt -y install openjdk-17-jre-headless \
-     g++ libopencv-core406 libopencv-highgui406 libopencv-imgcodecs406 \
-     libopencv-imgproc406 libjsoncpp25 libqt5xml5 libqt5sql5 libpython3.11 \
-     libopencv-objdetect406 libqt5widgets5 libopencv-ml406 libopencv-videoio406 \
-     libpython3.11-dev python3-distutils python3-pkg-resources && \
-     mkdir -p /etc/ld.so.conf.d && \
-     printf "/usr/local/lib\\n/usr/local/lib64\\n" > /etc/ld.so.conf.d/biqt.conf && \
-     ldconfig && \
-     if [ "${QUIRK_STRIP_QT5CORE_METADATA}" == "ON" ]; then \
-         echo "Stripping libQt5Core.so of its ABI metadata."; \
-         strip --remove-section=.note.ABI-tag /usr/lib/*-linux-gnu/libQt5Core.so*; \
-     fi
+    apt upgrade -y && \
+    groupadd -f staff && \
+    DEBIAN_FRONTEND=noninteractive apt -y install --no-install-recommends \
+    g++ \
+    init-system-helpers \
+    libjsoncpp25 \
+    libopencv-core406 \
+    libopencv-highgui406 \
+    libopencv-imgcodecs406 \
+    libopencv-imgproc406 \
+    libopencv-ml406 \
+    libopencv-objdetect406 \
+    libopencv-videoio406 \
+    libpython3.11-dev \
+    libqt5sql5 \
+    libqt5widgets5  \
+    libqt5xml5 \
+    openjdk-17-jre-headless \
+    python3-distutils \
+    python3-pkg-resources && \
+    apt clean && rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /etc/ld.so.conf.d && \
+    printf "/usr/local/lib\\n/usr/local/lib64\\n" > /etc/ld.so.conf.d/biqt.conf && \
+    ldconfig && \
+    if [ "${QUIRK_STRIP_QT5CORE_METADATA}" == "ON" ]; then \
+        echo "Stripping libQt5Core.so of its ABI metadata."; \
+        strip --remove-section=.note.ABI-tag /usr/lib/*-linux-gnu/libQt5Core.so*; \
+    fi
 
 ENTRYPOINT ["/bin/bash", "-l"]
