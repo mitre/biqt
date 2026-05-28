@@ -28,20 +28,23 @@
 #define LIB_HANDLE void *
 #endif
 
-typedef char *(*evaluator)(const char *filePath);
+typedef const char *(*evaluator)(const char *filePath);
+typedef void (*result_deleter)(const char *result);
 
 class DLL_EXPORT ProviderInfo {
   public:
     ProviderInfo(std::string modulePath, std::string lib);
     ~ProviderInfo();
     const char *evaluate(std::string filename) const;
+    void freeResult(const char *result) const;
     std::string name;
     std::string version;
     std::string description;
     std::string modality;
     std::string sourceLanguage;
     std::string className;
-    evaluator eval;
+    evaluator eval = nullptr;
+    result_deleter free_result = nullptr;
 
   private:
 #ifdef BIQT_JAVA_SUPPORT

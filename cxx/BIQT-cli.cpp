@@ -11,6 +11,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <json/json.h>
+#include <memory>
+#include <string>
 
 #include "BIQT.h"
 
@@ -54,8 +56,41 @@ void usage()
                  "OUTPUT BEHAVIORS\n"
                  "  -f (json|text)|--output-format=(json|text)\n"
                  "    Controls how output is returned to the user. By default, "
-                 "text is used.\n"
+                 "text is used.\n\n"
+                 "  -o FILE|--output=FILE\n"
+                 "    Appends output to the specified file. Use '-' for stdout.\n"
               << std::endl;
+}
+
+std::string csv_cell(const std::string &value)
+{
+    std::string safe = value;
+    if (!safe.empty() &&
+        (safe[0] == '=' || safe[0] == '+' || safe[0] == '-' || safe[0] == '@')) {
+        safe.insert(safe.begin(), '\'');
+    }
+
+    bool quote = safe.find_first_of(",\"\r\n") != std::string::npos;
+    if (!quote) {
+        return safe;
+    }
+
+    std::string escaped = "\"";
+    for (const char c : safe) {
+        if (c == '"') {
+            escaped += "\"\"";
+        }
+        else {
+            escaped += c;
+        }
+    }
+    escaped += "\"";
+    return escaped;
+}
+
+std::string csv_cell(double value)
+{
+    return std::to_string(value);
 }
 
 void write_text(std::ostream &outputStream, const std::string &imageName,
@@ -72,15 +107,17 @@ void write_text(std::ostream &outputStream, const std::string &imageName,
     for (const auto &qualityResult : result.qualityResult) {
         // Metric map
         for (const auto &metric : qualityResult.metrics) {
-            outputStream << result.provider << delim << imageName << delim << d
-                         << delim << "Metric" << delim << metric.first << delim
-                         << metric.second << std::endl;
+            outputStream << csv_cell(result.provider) << delim
+                         << csv_cell(imageName) << delim << d << delim
+                         << "Metric" << delim << csv_cell(metric.first) << delim
+                         << csv_cell(metric.second) << std::endl;
         }
         // Feature map
         for (const auto &feature : qualityResult.features) {
-            outputStream << result.provider << delim << imageName << delim << d
-                         << delim << "Feature" << delim << feature.first
-                         << delim << feature.second << std::endl;
+            outputStream << csv_cell(result.provider) << delim
+                         << csv_cell(imageName) << delim << d << delim
+                         << "Feature" << delim << csv_cell(feature.first)
+                         << delim << csv_cell(feature.second) << std::endl;
         }
         d = d + 1;
     }
@@ -95,15 +132,17 @@ void write_text2(std::ostream &outputStream, const std::string &imageName,
     for (const auto &qualityResult : result.qualityResult) {
         // Metric map
         for (const auto &metric : qualityResult.metrics) {
-            outputStream << result.provider << delim << imageName << delim << d
-                         << delim << "Metric" << delim << metric.first << delim
-                         << metric.second << std::endl;
+            outputStream << csv_cell(result.provider) << delim
+                         << csv_cell(imageName) << delim << d << delim
+                         << "Metric" << delim << csv_cell(metric.first) << delim
+                         << csv_cell(metric.second) << std::endl;
         }
         // Feature map
         for (const auto &feature : qualityResult.features) {
-            outputStream << result.provider << delim << imageName << delim << d
-                         << delim << "Feature" << delim << feature.first
-                         << delim << feature.second << std::endl;
+            outputStream << csv_cell(result.provider) << delim
+                         << csv_cell(imageName) << delim << d << delim
+                         << "Feature" << delim << csv_cell(feature.first)
+                         << delim << csv_cell(feature.second) << std::endl;
         }
         d = d + 1;
     }
@@ -277,7 +316,7 @@ int main(int argc, char **argv)
     bool provider_flag = false;
     bool file_list_flag = false;
 
-    BIQT app;
+    std::unique_ptr<BIQT> app;
 
     while (true) {
         static struct option long_options[] = {
@@ -287,11 +326,12 @@ int main(int argc, char **argv)
             {"modality", required_argument, 0, 'm'},
             {"provider", required_argument, 0, 'p'},
             {"output-format", required_argument, 0, 'f'},
+            {"output", required_argument, 0, 'o'},
             {"file-list", no_argument, 0, 'l'},
             {0, 0, 0, 0}};
 
         int option_index = 0;
-        int c = getopt_long(argc, argv, "f:hlVP::m:p:", long_options,
+        int c = getopt_long(argc, argv, "f:hlo:VP::m:p:", long_options,
                             &option_index);
 
         if (argc == 1) {
@@ -336,13 +376,16 @@ int main(int argc, char **argv)
             }
 
             // Error for no installed providers
-            if (app.getProviders().empty()) {
+            if (!app) {
+                app.reset(new BIQT());
+            }
+            if (app->getProviders().empty()) {
               std::cerr << "No provider libraries were found." << std::endl;
               exit(0);
             }
 
             // Error for no installed providers matching specified modality
-            for (const auto &p : app.getProviders()) {
+            for (const auto &p : app->getProviders()) {
                 if (!optarg || p->modality == optarg) {
                   found_matching_providers = true;
                 }
@@ -353,11 +396,11 @@ int main(int argc, char **argv)
             }
 
             // Normal behavior, print results
-            if (!app.getProviders().empty()) {
+            if (!app->getProviders().empty()) {
                 std::cout << std::endl
                           << "Provider\t\tVersion\tModality\tDescription"
                           << std::endl;
-                for (const auto &p : app.getProviders()) {
+                for (const auto &p : app->getProviders()) {
                     if (!optarg || p->modality == optarg) {
                         std::string name_tab = "\t\t";
                         if (p->name.length() > 16) {
@@ -371,7 +414,7 @@ int main(int argc, char **argv)
             }
             // No providers found!
             else {
-                std::cerr << "No providers found in '" << app.modulePath << "'!"
+                std::cerr << "No providers found in '" << app->modulePath << "'!"
                           << std::endl;
             }
             exit(0);
@@ -410,16 +453,20 @@ int main(int argc, char **argv)
         return -1;
     }
 
+    if (!app) {
+        app.reset(new BIQT());
+    }
+
     if (file_list_flag) {
         std::ifstream fileList(inputFile);
         std::string imageFile;
         while (getline(fileList, imageFile)) {
-            run_provider(app, modality_flag, imageFile, outputFile, mod_arg,
+            run_provider(*app, modality_flag, imageFile, outputFile, mod_arg,
                          output_type);
         }
     }
     else {
-        run_provider(app, modality_flag, inputFile, outputFile, mod_arg,
+        run_provider(*app, modality_flag, inputFile, outputFile, mod_arg,
                      output_type);
     }
     return 0;

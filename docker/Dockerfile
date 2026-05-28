@@ -74,10 +74,11 @@ RUN set -e; \
     cd /app; \
     export JAVA_BIN=`dirname $(readlink -f \`which javac\`)`; \
     export JAVA_HOME=`dirname "${JAVA_BIN}"`; \
-    git clone --verbose https://github.com/mitre/biqt --branch "${BIQT_COMMIT}" biqt-pub; \
+    git clone --verbose https://github.com/mitre/biqt biqt-pub; \
+    cd /app/biqt-pub; \
+    git checkout "${BIQT_COMMIT}"; \
     export NUM_CORES=$(cat /proc/cpuinfo | grep -Pc "processor\s*:\s*[0-9]+\s*$"); \
     echo "Builds will use ${NUM_CORES} core(s)."; \
-    cd /app/biqt-pub; \
     mkdir build; \
     cd build; \
     cmake -DBUILD_TARGET=UBUNTU -DCMAKE_BUILD_TYPE=Release -DWITH_JAVA=ON ..; \
@@ -95,10 +96,11 @@ RUN set -e; \
         source /etc/profile.d/biqt.sh; \
         ( mkdir /app 2>/dev/null || true ); \
         cd /app; \
-        git clone --verbose https://github.com/mitre/biqt-iris --branch "${BIQT_IRIS_COMMIT}" biqt-iris; \
+        git clone --verbose https://github.com/mitre/biqt-iris biqt-iris; \
+        cd /app/biqt-iris; \
+        git checkout "${BIQT_IRIS_COMMIT}"; \
         export NUM_CORES=$(cat /proc/cpuinfo | grep -Pc "processor\s*:\s*[0-9]+\s*$"); \
         echo "Builds will use ${NUM_CORES} core(s)."; \
-        cd /app/biqt-iris; \
         mkdir build; \
         cd build; \
         cmake -DCMAKE_BUILD_TYPE=Release ..; \
@@ -142,8 +144,9 @@ RUN set -e; \
         echo "Using OpenSSL Configuration at ${OPENSSL_CONF}: `cat ${OPENSSL_CONF}`"; \
         mkdir /app 2>/dev/null || true; \
         cd /app; \
-        git clone https://github.com/mitre/biqt-face.git biqt-face --depth=1 --branch "${BIQT_FACE_COMMIT}"; \
+        git clone https://github.com/mitre/biqt-face.git biqt-face; \
         cd /app/biqt-face; \
+        git checkout "${BIQT_FACE_COMMIT}"; \
         mkdir build; \
         cd build; \
         cmake -DCMAKE_BUILD_TYPE=Release -DOPENBR_DIR=/opt/openbr ..; \
@@ -170,9 +173,10 @@ RUN set -e; \
         apt clean && rm -rf /var/lib/apt/lists/* && \
         ( mkdir /app 2>/dev/null || true ); \
         cd /app; \
-        git clone https://github.com/mitre/biqt-contact-detector biqt-contact-detector --branch "${BIQT_CONTACT_DETECTOR_COMMIT}" --depth 1; \
+        git clone https://github.com/mitre/biqt-contact-detector biqt-contact-detector; \
         cd biqt-contact-detector; \
-        if [ "${USE_GPU}" == "ON"]; then \
+        git checkout "${BIQT_CONTACT_DETECTOR_COMMIT}"; \
+        if [ "${USE_GPU}" == "ON" ]; then \
             python3 -m pip install --break-system-packages -r requirements.txt; \
         else \
             python3 -m pip install --break-system-packages -r requirements-cpu.txt --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple; \

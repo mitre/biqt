@@ -9,6 +9,8 @@
 // #######################################################################
 
 #include <iostream>
+#include <cstring>
+#include <string>
 
 #include "jnihelper.h"
 #include "org_mitre_biqt_BIQT.h"
@@ -28,19 +30,18 @@
 int init_jvm(JavaVM **jvm, JNIEnv **env, jclass *cls, std::string className,
              std::string classPath)
 {
-    char classPathOption[2048] = "-Djava.class.path=";
-    strncpy(classPathOption+18, classPath.c_str(), 2030);
+    std::string classPathOption = "-Djava.class.path=" + classPath;
     /* ================= prepare loading of Java VM ========================== */
     JavaVMInitArgs vm_args;                        // Initialization arguments
     JavaVMOption *options = new JavaVMOption[1];   // JVM invocation options
-    options[0].optionString = classPathOption;
+    options[0].optionString = const_cast<char *>(classPathOption.c_str());
     vm_args.version = JNI_VERSION_10;             // minimum Java version
     vm_args.nOptions = 1;                          // number of options
     vm_args.options = options;
     vm_args.ignoreUnrecognized = false;  // invalid options make the init fail
     /* ============ load and initialize Java VM and JNI interface =========== */
     jint rc = JNI_CreateJavaVM(jvm, (void**)env, &vm_args);  // YES !!
-    delete options;    // we then no longer need the initialization options.
+    delete[] options;    // we then no longer need the initialization options.
     /* ============== Check for initialization errors ======================= */
     if (rc != JNI_OK) {
         // TO DO: error processing...
@@ -91,6 +92,7 @@ const char *java_provider_eval(const char *filePath, const char *providerName,
     jmethodID constructor, execMethod, toStringMethod;
     const char *result;
     char *returnvalue;
+    (void)providerName;
 
     if (init_jvm(&jvm, &env, &cls, className, classPath)) {
         return nullptr;
@@ -99,6 +101,7 @@ const char *java_provider_eval(const char *filePath, const char *providerName,
         // log the error;
         std::cerr << "Unable to locate the constructor for" << className
                   << std::endl;
+        destroy_jvm(jvm);
         return nullptr;
     }
     if (!(execMethod = jni_get_method(env, cls, "evaluate",
@@ -107,17 +110,25 @@ const char *java_provider_eval(const char *filePath, const char *providerName,
         // log error
         std::cerr << "Unable to locate the evaluate method for " << className
                   << std::endl;
+        destroy_jvm(jvm);
         return nullptr;
     }
     jfilename = env->NewStringUTF(filePath);
     provider = env->NewObject(cls, constructor);
     jsonResult = env->CallObjectMethod(provider, execMethod, jfilename);
-    env->ReleaseStringUTFChars(jfilename, NULL);
+    env->DeleteLocalRef(jfilename);
+    if (env->ExceptionCheck() || !jsonResult) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+        destroy_jvm(jvm);
+        return nullptr;
+    }
 
     jsonObject = env->FindClass("org/json/simple/JSONObject");
     if (!jsonObject) {
         std::cerr << "Unable to locate the class org/json/simple/JSONObject"
                   << std::endl;
+        destroy_jvm(jvm);
         return nullptr;
     }
 
@@ -126,15 +137,25 @@ const char *java_provider_eval(const char *filePath, const char *providerName,
         // log error
         std::cerr << "Unable to locate the toString method for"
                 " org/json/simple/JSONObject" << std::endl;
+        destroy_jvm(jvm);
         return nullptr;
     }
     jresultStr = (jstring)(env->CallObjectMethod(jsonResult, toStringMethod));
+    if (env->ExceptionCheck() || !jresultStr) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+        destroy_jvm(jvm);
+        return nullptr;
+    }
 
     result = env->GetStringUTFChars(jresultStr, NULL);
-    returnvalue = new char[strlen(result)];
+    if (!result) {
+        destroy_jvm(jvm);
+        return nullptr;
+    }
+    returnvalue = new char[strlen(result) + 1];
     strcpy(returnvalue, result);
     env->ReleaseStringUTFChars(jresultStr, NULL);
     destroy_jvm(jvm);
     return returnvalue;
 }
-

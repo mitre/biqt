@@ -147,6 +147,13 @@ class Provider {
     static EvaluationResult deserializeResult(const char *result_str)
     {
         EvaluationResult result;
+        result.errorCode = 0;
+        if (!result_str) {
+            result.errorCode = -1;
+            result.message = "Provider returned a null result.";
+            return result;
+        }
+
         // String to JSON
         Json::Value result_json;
         Json::Reader reader;
@@ -154,6 +161,9 @@ class Provider {
         if (!parsingSuccessful) {
             std::cout << "Failed to parse"
                       << reader.getFormattedErrorMessages();
+            result.errorCode = -1;
+            result.message = "Provider returned malformed JSON.";
+            return result;
         }
 
         // JSON to Evaluation::Result
@@ -241,6 +251,7 @@ extern "C" {
  * @return The return status of the provider.
  */
 DLL_EXPORT const char *provider_eval(const char *filePath);
+DLL_EXPORT void provider_free(const char *result);
 
 #ifdef __cplusplus
 }

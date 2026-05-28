@@ -52,3 +52,8 @@ DLL_EXPORT const char *provider_eval(const char *cFilePath)
     Provider::EvaluationResult result = p.evaluate(filePath);
     return Provider::serializeResult(result);
 }
+
+DLL_EXPORT void provider_free(const char *result)
+{
+    delete[] result;
+}

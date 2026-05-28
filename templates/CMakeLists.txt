@@ -11,13 +11,13 @@
 cmake_minimum_required(VERSION 3.1)
 project(NewProvider)
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 OPTION(BUILD_SHARED_LIBS "Builds shared libraries for certain dependencies. Recommended: ON" ON)
 OPTION(BUILD_STATIC_LIBS "Builds static libraries for certain dependencies. Recommended: OFF" OFF)
 
 if(NOT WIN32)
-	set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-  set(CMAKE_CXX_FLAGS "-g -fPIC")
+		set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
 
 if(DEFINED ENV{BIQT_HOME})
@@ -65,6 +65,14 @@ file(GLOB SOURCE_FILES "*.cpp")
 # TODO: Add any other source files.
 # set(EXTRA_FILES MyFile.cpp)
 add_library(NewProvider SHARED ${SOURCE_FILES} ${EXTRA_FILES})
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+	target_compile_options(NewProvider PRIVATE -Wall -Wextra -Wpedantic -fstack-protector-strong)
+	target_compile_definitions(NewProvider PRIVATE _FORTIFY_SOURCE=2)
+	if(NOT APPLE)
+		target_link_options(NewProvider PRIVATE -Wl,-z,relro -Wl,-z,now)
+	endif()
+endif()
 
 target_link_libraries(NewProvider ${JSONCPP} ${BIQTAPI})
 
