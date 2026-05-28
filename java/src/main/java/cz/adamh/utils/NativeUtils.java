@@ -29,6 +29,9 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.ProviderNotFoundException;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * A simple library class which helps with loading dynamic libraries stored in
@@ -102,14 +105,14 @@ public class NativeUtils {
     File temp = new File(temporaryDir, filename);
 
     try (InputStream is = NativeUtils.class.getResourceAsStream(path)) {
+      if (is == null) {
+        throw new FileNotFoundException("File " + path +
+                                        " was not found inside JAR.");
+      }
       Files.copy(is, temp.toPath(), StandardCopyOption.REPLACE_EXISTING);
     } catch (IOException e) {
       temp.delete();
       throw e;
-    } catch (NullPointerException e) {
-      temp.delete();
-      throw new FileNotFoundException("File " + path +
-                                      " was not found inside JAR.");
     }
 
     try {
@@ -139,13 +142,14 @@ public class NativeUtils {
   }
 
   private static File createTempDirectory(String prefix) throws IOException {
-    String tempDir = System.getProperty("java.io.tmpdir");
-    File generatedDir = new File(tempDir, prefix + System.nanoTime());
-
-    if (!generatedDir.mkdir())
-      throw new IOException("Failed to create temp directory " +
-                            generatedDir.getName());
-
+    File generatedDir = Files.createTempDirectory(prefix).toFile();
+    if (isPosixCompliant()) {
+      Set<PosixFilePermission> ownerOnly =
+          EnumSet.of(PosixFilePermission.OWNER_READ,
+                     PosixFilePermission.OWNER_WRITE,
+                     PosixFilePermission.OWNER_EXECUTE);
+      Files.setPosixFilePermissions(generatedDir.toPath(), ownerOnly);
+    }
     return generatedDir;
   }
 }

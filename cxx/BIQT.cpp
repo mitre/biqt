@@ -15,6 +15,7 @@
 #include <iostream>
 #include <json/json.h>
 #include <map>
+#include <stdexcept>
 #include <sstream>
 #include <sys/stat.h>
 
@@ -67,7 +68,13 @@ ProviderInfo::ProviderInfo(std::string modulePath, std::string lib)
     std::string desc_path =
         modulePath + "/providers/" + lib + "/descriptor.json";
     std::ifstream desc_file(desc_path.c_str(), std::ifstream::binary);
+    if (!desc_file) {
+        throw std::runtime_error("Provider Read error: Unable to open descriptor: " + desc_path);
+    }
     desc_file >> desc;
+    if (!desc.isObject()) {
+        throw std::runtime_error("Provider Read error: Invalid descriptor: " + desc_path);
+    }
 
     this->name = std::string((desc["name"]).asString());
     this->version = std::string((desc["version"]).asString());
@@ -80,23 +87,36 @@ ProviderInfo::ProviderInfo(std::string modulePath, std::string lib)
         this->classPath = this->getClassPath(modulePath + "/providers/" + lib);
     } else {
 #endif
+        if (!this->handle) {
+            throw std::runtime_error("Provider Read error: Missing shared object: " + this->soPath);
+        }
         this->eval = (evaluator)dlsym(this->handle, "provider_eval");
         if (!this->eval) {
             throw std::runtime_error("Provider API Error:"
                                  "Unable to locate the provider_eval function");
         }
+        this->free_result = (result_deleter)dlsym(this->handle, "provider_free");
 #ifdef BIQT_JAVA_SUPPORT
     }
 #endif
 }
 
 #ifdef BIQT_JAVA_SUPPORT
+namespace {
+bool hasSuffix(const char *name, const char *suffix)
+{
+    size_t name_length = strlen(name);
+    size_t suffix_length = strlen(suffix);
+    return name_length >= suffix_length &&
+           !strcmp(name + name_length - suffix_length, suffix);
+}
+}
+
 std::string ProviderInfo::getClassPath(std::string providerPath)
 {
     struct dirent *module;
     std::set<std::string> paths;
     std::string classPath = "";
-    int extension;
     DIR *dir;
     std::string biqt_home = getenv("BIQT_HOME");
 
@@ -105,18 +125,22 @@ std::string ProviderInfo::getClassPath(std::string providerPath)
     }
     /* find the BIQT jar files */
     dir = opendir(biqt_home.c_str());
+    if (!dir) {
+        return "";
+    }
     while ((module = readdir(dir)) != nullptr) {
-        extension = strlen(module->d_name) - 4;
-        if (!strcmp(module->d_name + extension, ".jar")) {
+        if (hasSuffix(module->d_name, ".jar")) {
             paths.insert(biqt_home + DIRSEP + module->d_name);
         }
     }
     closedir(dir);
     /* find the jar files for the provider */
     dir = opendir(providerPath.c_str());
+    if (!dir) {
+        return classPath;
+    }
     while ((module = readdir(dir)) != nullptr) {
-        extension = strlen(module->d_name) - 4;
-        if (!strcmp(module->d_name + extension, ".jar")) {
+        if (hasSuffix(module->d_name, ".jar")) {
             paths.insert(providerPath + DIRSEP + module->d_name);
         }
     }
@@ -139,12 +163,11 @@ ProviderInfo::~ProviderInfo()
     }
 }
 
-const char *ProviderInfo::evaluate(std::string filename) const
+char *ProviderInfo::evaluate(std::string filename) const
 {
 #ifdef BIQT_JAVA_SUPPORT
-    const char *returnvalue;
     if (this->sourceLanguage == "java") {
-        returnvalue = java_provider_eval(filename.c_str(), this->name.c_str(),
+        char *returnvalue = java_provider_eval(filename.c_str(), this->name.c_str(),
                 this->className.c_str(), this->classPath.c_str());
         if (!returnvalue) {
             std::cerr << "An error occurred indicating a problem with the"
@@ -166,6 +189,19 @@ const char *ProviderInfo::evaluate(std::string filename) const
     }
 }
 
+void ProviderInfo::freeResult(char *result) const
+{
+    if (!result) {
+        return;
+    }
+    if (this->free_result) {
+        this->free_result(result);
+    }
+    else {
+        delete[] result;
+    }
+}
+
 BIQT::BIQT()
 {
     /* Check default installation paths */
@@ -179,13 +215,17 @@ BIQT::BIQT()
                       << "', but no providers directory found!" << std::endl;
         }
     }
-    else {
-        /* BIQT_HOME is not set or providers directory missing,
-         * try the current directory */
+    else if (getenv("BIQT_ALLOW_LOCAL_PROVIDERS")) {
         std::cerr << "WARNING: BIQT_HOME is not set; using the current "
-            "directory instead. This may not be what you want!" << std::endl;
+            "directory because BIQT_ALLOW_LOCAL_PROVIDERS is set." << std::endl;
         setenv("BIQT_HOME", ".", 1);
         this->modulePath = std::string(".");
+    }
+    else {
+        std::cerr << "ERROR: BIQT_HOME is not set. Refusing to load providers "
+            "from the current directory. Set BIQT_HOME or set "
+            "BIQT_ALLOW_LOCAL_PROVIDERS=1 for development-only local loading."
+                  << std::endl;
     }
     this->getProviders();
 }
@@ -213,18 +253,15 @@ std::string BIQT::version() const { return __BIQT_VERSION__; }
 bool BIQT::fileExists(const std::string &filename)
 {
     struct stat info;
-    if (stat(filename.c_str(), &info))
-        return false;
-#ifdef _WIN32
-    return (bool)(info.st_mode);
-#else
-    return (bool)(info.st_mode & (S_IXOTH | S_IROTH));
-#endif
+    return stat(filename.c_str(), &info) == 0;
 }
 
 std::set<std::string> BIQT::providerLibs()
 {
     std::set<std::string> returnValue;
+    if (this->modulePath.empty()) {
+        return returnValue;
+    }
     std::string provider_path = this->modulePath + "/providers";
     struct dirent *pro;
 
@@ -307,8 +344,9 @@ Provider::EvaluationResult BIQT::runProvider(const std::string &pName,
 Provider::EvaluationResult BIQT::runProvider(const ProviderInfo *p,
                                              const std::string &filePath)
 {
-    Provider::EvaluationResult result = {0};
-    const char* result_str = NULL;
+    Provider::EvaluationResult result;
+    result.errorCode = 0;
+    char* result_str = NULL;
     try {
         result_str = p->evaluate(filePath);
         result = Provider::deserializeResult(result_str);
@@ -321,7 +359,7 @@ Provider::EvaluationResult BIQT::runProvider(const ProviderInfo *p,
             result.errorCode = -1;
     }
     if(result_str){
-        delete[] result_str;
+        p->freeResult(result_str);
     }
 
     if (result.errorCode != 0) {

@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(biqt)
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 OPTION(BUILD_SHARED_LIBS "Builds shared libraries for certain dependencies. Recommended: ON" ON)
 OPTION(BUILD_STATIC_LIBS "Builds static libraries for certain dependencies. Recommended: OFF" OFF)
@@ -14,8 +15,7 @@ message("BIQT v${BIQT_VERSION}")
 add_definitions(-DBIQT_VERSION="${BIQT_VERSION}")
 
 if(NOT WIN32)
-	set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-	set(CMAKE_CXX_FLAGS "-g -fPIC")
+		set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 else()
   include_directories(cxx/windows)
 endif()
@@ -53,6 +53,17 @@ add_library(biqtapi SHARED ${LIBRARY_FILES} ${JAVA_LIBRARY_FILES})
 
 set(SOURCE_FILES cxx/BIQT-cli.cpp)
 add_executable(biqt ${SOURCE_FILES})
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+	target_compile_options(biqtapi PRIVATE -Wall -Wextra -Wpedantic -fstack-protector-strong)
+	target_compile_options(biqt PRIVATE -Wall -Wextra -Wpedantic -fstack-protector-strong)
+	target_compile_definitions(biqtapi PRIVATE _FORTIFY_SOURCE=2)
+	target_compile_definitions(biqt PRIVATE _FORTIFY_SOURCE=2)
+	if(NOT APPLE)
+		target_link_options(biqtapi PRIVATE -Wl,-z,relro -Wl,-z,now)
+		target_link_options(biqt PRIVATE -Wl,-z,relro -Wl,-z,now)
+	endif()
+endif()
 
 # BUILD JAVA BINDINGS (IF REQUESTED) ##########################################
 

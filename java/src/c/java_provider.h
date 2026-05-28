@@ -20,7 +20,7 @@
  *
  * @return The return status of the provider.
  */
-const char *java_provider_eval(const char *filePath, const char *providerName,
-                               const char *className, const char *classPath);
+char *java_provider_eval(const char *filePath, const char *providerName,
+                         const char *className, const char *classPath);
 
 #endif //BIQT_JAVA_PROVIDER_H

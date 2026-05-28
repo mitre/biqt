@@ -13,8 +13,8 @@ import re
 import argparse
 import sys
 
-if not os.environ['BIQT_HOME']:
-  sys.exit("Error: The BIQT_HOME environment variable is not set. This script requires BIQT_HOME to be assigned to the installation directory of BIQT.")
+if not os.environ.get('BIQT_HOME'):
+	sys.exit("Error: The BIQT_HOME environment variable is not set. This script requires BIQT_HOME to be assigned to the installation directory of BIQT.")
 
 def instantiate_template(pname, template_name, out_file_name):
 	with open(os.environ['BIQT_HOME'] + '/scripts/templates/' + template_name, 'r') as template_file, open(pname + '/' + out_file_name, 'w') as provider_file:
