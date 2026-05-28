@@ -40,16 +40,22 @@ RUN set -e && \
         "\tBIQT Face: ${WITH_BIQT_FACE} \n" \
         "\tBIQT Iris: ${WITH_BIQT_IRIS} \n" \
         "\tBIQT Contact Detector: ${WITH_BIQT_CONTACT_DETECTOR}" && \
+    apt update && \
     apt upgrade -y && \
     apt install -y --no-install-recommends \
-        build-essential \
+        ca-certificates \
+        ca-certificates-java \
         cmake \
         curl \
+        g++ \
+        gcc \
         git \
         libjsoncpp-dev \
         libopencv-dev \
+        make \
         openjdk-17-jdk && \
-    apt clean && rm -rf /var/lib/apt/lists/*
+    apt clean && rm -rf /var/lib/apt/lists/* && \
+    update-ca-certificates
 
 # Building on some infrastructure requires the installation of a certificate authority. This is OPTIONAL
 # for external systems and will only be installed when the ca_file secret is provided in the build command.
@@ -107,11 +113,10 @@ ENV BIQT_FACE_COMMIT=${BIQT_FACE_COMMIT}
 
 # Stage 4: BIQT Face
 RUN set -e; \
-    source /etc/profile.d/biqt.sh; \
     if [ "${WITH_BIQT_FACE}" == "ON" ]; then \
         # Install BIQT Face dependencies
-        set -e; \
         echo "Installing QT5 for BIQT Face."; \
+        source /etc/profile.d/biqt.sh; \
         apt update && \
         apt install -y qtbase5-dev --no-install-recommends && \
         apt clean && rm -rf /var/lib/apt/lists/* && \
@@ -168,9 +173,9 @@ RUN set -e; \
         git clone https://github.com/mitre/biqt-contact-detector biqt-contact-detector --branch "${BIQT_CONTACT_DETECTOR_COMMIT}" --depth 1; \
         cd biqt-contact-detector; \
         if [ "${USE_GPU}" == "ON"]; then \
-            pip install -r requirements.txt; \
+            python3 -m pip install --break-system-packages -r requirements.txt; \
         else \
-            pip install -r requirements-cpu.txt --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple; \
+            python3 -m pip install --break-system-packages -r requirements-cpu.txt --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple; \
         fi; \
         export NUM_CORES=$(cat /proc/cpuinfo | grep -Pc "processor\s*:\s*[0-9]+\s*$"); \
         mkdir build; \
@@ -195,8 +200,11 @@ ARG QUIRK_STRIP_QT5CORE_METADATA=OFF
 ENV QUIRK_STRIP_QT5CORE_METADATA=${QUIRK_STRIP_QT5CORE_METADATA}
 
 RUN apt update && \
+    apt upgrade -y && \
+    groupadd -f staff && \
     DEBIAN_FRONTEND=noninteractive apt -y install --no-install-recommends \
     g++ \
+    init-system-helpers \
     libjsoncpp25 \
     libopencv-core406 \
     libopencv-highgui406 \

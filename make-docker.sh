@@ -52,7 +52,6 @@ fi
 # Remove `--secret` argument if organization certificate does not need to be installed.
 DOCKER_BUILDKIT=1 docker build \
 	--pull \
-	--no-cache \
 	${BIQT_DOCKER_BUILD_ARGS[@]} \
 	--build-arg QUIRK_OPENSSL_RENEGOTIATION=ON \
 	--build-arg QUIRK_STRIP_QT5CORE_METADATA=ON \
