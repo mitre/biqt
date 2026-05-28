@@ -250,8 +250,8 @@ extern "C" {
  *
  * @return The return status of the provider.
  */
-DLL_EXPORT char *provider_eval(const char *filePath);
-DLL_EXPORT void provider_free(char *result);
+DLL_EXPORT const char *provider_eval(const char *filePath);
+DLL_EXPORT void provider_free(const char *result);
 
 #ifdef __cplusplus
 }

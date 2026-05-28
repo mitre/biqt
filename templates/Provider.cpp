@@ -45,7 +45,7 @@ Provider::EvaluationResult NewProvider::evaluate(const std::string &file)
     return evalResult;
 }
 
-DLL_EXPORT char *provider_eval(const char *cFilePath)
+DLL_EXPORT const char *provider_eval(const char *cFilePath)
 {
     NewProvider p;
     std::string filePath(cFilePath);
@@ -53,7 +53,7 @@ DLL_EXPORT char *provider_eval(const char *cFilePath)
     return Provider::serializeResult(result);
 }
 
-DLL_EXPORT void provider_free(char *result)
+DLL_EXPORT void provider_free(const char *result)
 {
     delete[] result;
 }

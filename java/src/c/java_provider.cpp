@@ -81,8 +81,8 @@ void destroy_jvm(JavaVM *jvm)
  *
  * @return The return status of the provider.
  */
-char *java_provider_eval(const char *filePath, const char *providerName,
-                         const char *className, const char *classPath)
+const char *java_provider_eval(const char *filePath, const char *providerName,
+                               const char *className, const char *classPath)
 {
     JavaVM *jvm;
     JNIEnv *env;

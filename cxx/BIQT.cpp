@@ -163,11 +163,11 @@ ProviderInfo::~ProviderInfo()
     }
 }
 
-char *ProviderInfo::evaluate(std::string filename) const
+const char *ProviderInfo::evaluate(std::string filename) const
 {
 #ifdef BIQT_JAVA_SUPPORT
     if (this->sourceLanguage == "java") {
-        char *returnvalue = java_provider_eval(filename.c_str(), this->name.c_str(),
+        const char *returnvalue = java_provider_eval(filename.c_str(), this->name.c_str(),
                 this->className.c_str(), this->classPath.c_str());
         if (!returnvalue) {
             std::cerr << "An error occurred indicating a problem with the"
@@ -189,7 +189,7 @@ char *ProviderInfo::evaluate(std::string filename) const
     }
 }
 
-void ProviderInfo::freeResult(char *result) const
+void ProviderInfo::freeResult(const char *result) const
 {
     if (!result) {
         return;
@@ -346,7 +346,7 @@ Provider::EvaluationResult BIQT::runProvider(const ProviderInfo *p,
 {
     Provider::EvaluationResult result;
     result.errorCode = 0;
-    char* result_str = NULL;
+    const char* result_str = NULL;
     try {
         result_str = p->evaluate(filePath);
         result = Provider::deserializeResult(result_str);

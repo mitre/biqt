@@ -28,15 +28,15 @@
 #define LIB_HANDLE void *
 #endif
 
-typedef char *(*evaluator)(const char *filePath);
-typedef void (*result_deleter)(char *result);
+typedef const char *(*evaluator)(const char *filePath);
+typedef void (*result_deleter)(const char *result);
 
 class DLL_EXPORT ProviderInfo {
   public:
     ProviderInfo(std::string modulePath, std::string lib);
     ~ProviderInfo();
-    char *evaluate(std::string filename) const;
-    void freeResult(char *result) const;
+    const char *evaluate(std::string filename) const;
+    void freeResult(const char *result) const;
     std::string name;
     std::string version;
     std::string description;
